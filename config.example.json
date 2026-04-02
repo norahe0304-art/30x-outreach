@@ -1,0 +1,57 @@
+{
+  "business_domain": "yourdomain.com",
+
+  "apis": {
+    "apollo": {
+      "key": "",
+      "note": "Apollo.io People Search API — for lead sourcing"
+    },
+    "leadmagic": {
+      "key": "",
+      "note": "LeadMagic — for email verification"
+    },
+    "instantly": {
+      "key": "",
+      "note": "Instantly v2 API — for campaign management and sending"
+    },
+    "brave": {
+      "key": "",
+      "note": "Brave Search API — for competitive monitoring and Twitter/X scanning"
+    }
+  },
+
+  "sending": {
+    "daily_limit_per_account": 30,
+    "warmup_min_score": 80,
+    "warmup_min_days": 14,
+    "batch_size": 25,
+    "smtp": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "user": "",
+      "password": "",
+      "sender_email": "",
+      "sender_name": ""
+    }
+  },
+
+  "competitors": [
+    {
+      "key": "competitor-a",
+      "name": "Competitor A",
+      "domain": "competitor-a.com",
+      "pricing_url": "https://competitor-a.com/pricing",
+      "blog_url": "https://competitor-a.com/blog"
+    }
+  ],
+
+  "lead_pipeline": {
+    "default_volume": 500,
+    "exclude_file": null
+  },
+
+  "cross_signals": {
+    "scan_hours": 48,
+    "stop_words": []
+  }
+}

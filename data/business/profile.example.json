@@ -1,0 +1,58 @@
+{
+  "company_name": "",
+  "domain": "",
+  "created_at": "",
+  "last_updated": "",
+
+  "positioning": {
+    "one_liner": "",
+    "value_prop": "",
+    "differentiator": "",
+    "category": ""
+  },
+
+  "product": {
+    "what_you_sell": "",
+    "primary_offer": "",
+    "offer_type": "",
+    "price_range": "",
+    "pricing_model": "",
+    "pricing_url": ""
+  },
+
+  "proof": {
+    "best_result": "",
+    "named_clients": [],
+    "testimonials": [],
+    "case_study_urls": [],
+    "stats": []
+  },
+
+  "market": {
+    "ideal_buyer_title": "",
+    "ideal_buyer_company_type": "",
+    "top_competitors": [],
+    "top_objection": "",
+    "industry_verticals": []
+  },
+
+  "brand_voice": {
+    "tone": "",
+    "style_notes": "",
+    "words_to_use": [],
+    "words_to_avoid": []
+  },
+
+  "sources": {
+    "auto_scraped": {
+      "homepage": {},
+      "pricing_page": {},
+      "about_page": {},
+      "case_studies": {},
+      "linkedin": {},
+      "twitter": {}
+    },
+    "founder_interview": {},
+    "conflicts": []
+  }
+}

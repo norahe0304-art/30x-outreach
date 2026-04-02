@@ -1,0 +1,91 @@
+{
+  "icp_name": "",
+  "created_at": "",
+  "last_updated": "",
+  "business_domain": "",
+
+  "targeting": {
+    "titles": {
+      "primary": [],
+      "secondary": [],
+      "never_target": []
+    },
+    "industries": {
+      "primary": [],
+      "secondary": [],
+      "excluded": []
+    },
+    "company_size": {
+      "employee_min": null,
+      "employee_max": null,
+      "employee_sweet_spot": "",
+      "revenue_min": "",
+      "revenue_max": "",
+      "funding_stage": ""
+    },
+    "geography": {
+      "primary_markets": [],
+      "excluded_regions": []
+    }
+  },
+
+  "buying_signals": [
+    {
+      "signal": "",
+      "source": "",
+      "weight": "high"
+    }
+  ],
+
+  "anti_icp": {
+    "company_traits": [],
+    "contact_traits": []
+  },
+
+  "offer_fit": {
+    "primary_offer": "",
+    "why_this_offer": ""
+  },
+
+  "objections": [
+    {
+      "objection": "",
+      "neutralizer": "",
+      "use_in_step": null
+    }
+  ],
+
+  "personalization": {
+    "data_sources": [],
+    "available_fields": [],
+    "personalization_strategy": ""
+  },
+
+  "technographics": {
+    "required_tools": [],
+    "competitor_tools": [],
+    "complementary_tools": [],
+    "data_stack_maturity": ""
+  },
+
+  "intent_signals": {
+    "bombora_topics": [],
+    "g2_categories": [],
+    "data_sources": []
+  },
+
+  "apollo_search_params": {
+    "person_titles": [],
+    "q_organization_keyword_tags": [],
+    "organization_num_employees_ranges": [],
+    "person_locations": [],
+    "q_keywords": ""
+  },
+
+  "enrichment_fields": {
+    "funding_date": true,
+    "tech_stack_crm": true,
+    "days_in_role": true,
+    "note": "These 3 fields have highest conversion lift for trigger-event targeting"
+  }
+}
