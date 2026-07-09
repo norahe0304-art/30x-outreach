@@ -348,9 +348,14 @@ def main():
     config = load_config()
     api_key = args.api_key or get_api_key(config, "instantly") or os.environ.get("INSTANTLY_API_KEY")
     if not api_key:
-        api_key = input("Instantly API key: ").strip()
+        try:
+            if sys.stdin.isatty():
+                api_key = input("Instantly API key: ").strip()
+        except EOFError:
+            pass
     if not api_key:
-        print("ERROR: API key required. Set in config.json, INSTANTLY_API_KEY env var, or --api-key.")
+        print("Error: API key required. Run this script interactively to enter it, or set it in config.json, "
+              "the INSTANTLY_API_KEY env var, or via --api-key.")
         sys.exit(1)
 
     headers = get_headers(api_key)
