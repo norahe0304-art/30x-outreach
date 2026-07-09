@@ -1,0 +1,13 @@
+.env
+.env.local
+__pycache__/
+*.pyc
+.DS_Store
+config.json
+
+# Real, non-example run data — keep the schema examples, not live output
+data/business/profile.json
+data/icps/*/profile.json
+data/leads/
+data/intel/
+data/output/

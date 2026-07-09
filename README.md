@@ -121,22 +121,30 @@ Weekly Intelligence Report
 ## File Structure
 
 ```
-outbound-engine/
+30x-outreach/
 ├── README.md                           # This file
 ├── SKILL.md                            # Claude Code skill definition
+├── CLAUDE.md                           # Module map for AI agents working in this repo
+├── LICENSE                             # MIT
 ├── .env.example                        # Environment variable template
+├── config.example.json                 # Unified config template (API keys, send limits, competitors)
 ├── requirements.txt                    # Python dependencies
 ├── scripts/
+│   ├── config_loader.py                # Shared config loader + output formatting
 │   ├── lead-pipeline.py                # Apollo → LeadMagic → Dedupe → Instantly
 │   ├── instantly-audit.py              # Instantly account health check
 │   ├── competitive-monitor.py          # Competitor tracking
 │   ├── cross-signal-detector.py        # Multi-source signal detection
-│   └── cold-outbound-sender.py         # Send approved outbound emails
-└── references/
-    ├── expert-panel.md                 # Default 10-expert scoring roster
-    ├── copy-rules.md                   # Cold email copywriting rules
-    ├── icp-template.md                 # ICP data collection template
-    └── instantly-rules.md              # Instantly variable syntax & deliverability rules
+│   └── cold-outbound-sender.py         # Send approved outbound emails (PII scan + daily cap)
+├── references/
+│   ├── expert-panel.md                 # Default 10-expert scoring roster
+│   ├── copy-rules.md                   # Cold email copywriting rules
+│   ├── icp-template.md                 # ICP data collection template
+│   ├── instantly-rules.md              # Instantly variable syntax & deliverability rules
+│   └── market-research-brief-2026.md   # Sourcing notes behind the ICP/scoring defaults
+└── data/                               # Persistence layer (added on top of the upstream skill)
+    ├── business/profile.example.json   # Business profile schema
+    └── icps/profile.example.json       # ICP profile schema
 ```
 
 ## Requirements
@@ -154,21 +162,14 @@ outbound-engine/
 - **Send limits**: Adjust `MAX_PER_DAY` in `cold-outbound-sender.py`
 - **Data sources**: Point `cross-signal-detector.py` at your own data directories
 
+## Credits
+
+Built on top of Eric Siu's open-source [`ai-marketing-skills/outbound-engine`](https://github.com/ericosiu/ai-marketing-skills/tree/main/outbound-engine) (MIT licensed). This fork adds:
+- A persistent data layer (`data/business`, `data/icps`, `data/leads`, `data/intel`) so business/ICP profiles survive across runs instead of being re-entered per call
+- `config_loader.py` — a single config source (`config.json`) shared by every script instead of scattered env vars
+- PII-safety scanning in `cold-outbound-sender.py` before any send
+- A market-research brief (`references/market-research-brief-2026.md`) documenting where the ICP/scoring defaults came from
+
 ## License
 
-MIT
-
-
----
-
-<div align="center">
-
-**🧠 [Want these built and managed for you? →](https://singlebrain.com/?utm_source=github&utm_medium=skill_repo&utm_campaign=ai_marketing_skills)**
-
-*This is how we build agents at [Single Brain](https://singlebrain.com/?utm_source=github&utm_medium=skill_repo&utm_campaign=ai_marketing_skills) for our clients.*
-
-[Single Grain](https://www.singlegrain.com/?utm_source=github&utm_medium=skill_repo&utm_campaign=ai_marketing_skills) · our marketing agency
-
-📬 **[Level up your marketing with 14,000+ marketers and founders →](https://levelingup.beehiiv.com/subscribe)** *(free)*
-
-</div>
+MIT — see [LICENSE](./LICENSE).

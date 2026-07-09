@@ -1,5 +1,5 @@
 # 30x Outreach Engine
-> L2 | 父级: /ai-marketing-skills/CLAUDE.md
+> 独立发布仓库（从内部 monorepo 抽取，无外部父级 CLAUDE.md）
 
 Claude Code Skill: 端到端冷邮件 outbound 引擎。
 从业务画像到 ICP 定义，从 lead 获取到邮件创作，从专家评审到发送。
