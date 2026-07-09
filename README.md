@@ -4,6 +4,8 @@ From ICP definition to emails in inbox — fully automated cold outbound.
 
 This skill category handles the complete cold outbound pipeline: defining your ideal customer profile, writing expert-scored email sequences, sourcing and verifying leads, deduplicating against existing campaigns, uploading to your email platform, and monitoring the competitive landscape.
 
+> **Want to try it with zero setup?** Run `python3 scripts/competitive-monitor.py` — no API keys required.
+
 ## What's Inside
 
 ### 🎯 Cold Outbound Optimizer (`SKILL.md`)
@@ -54,11 +56,12 @@ Pull campaign health data from the Instantly v2 API:
 
 ## Quick Start
 
-### 1. Set Up Environment Variables
+### 1. Create a Virtual Environment (macOS)
+
+Homebrew's Python refuses global `pip install` with an "externally-managed-environment" error, so create a venv first:
 
 ```bash
-cp .env.example .env
-# Fill in your API keys
+python3 -m venv .venv && source .venv/bin/activate
 ```
 
 ### 2. Install Dependencies
@@ -67,7 +70,21 @@ cp .env.example .env
 pip install -r requirements.txt
 ```
 
-### 3. Run the Lead Pipeline
+### 3. Set Up Environment Variables
+
+```bash
+cp .env.example .env
+# Fill in your API keys
+```
+
+### 4. Bootstrap Your Config
+
+```bash
+cp config.example.json config.json
+# Fill in your API keys, sending limits, and competitor list
+```
+
+### 5. Run the Lead Pipeline
 
 ```bash
 python3 scripts/lead-pipeline.py \
@@ -80,19 +97,19 @@ python3 scripts/lead-pipeline.py \
   --dry-run
 ```
 
-### 4. Audit Your Instantly Account
+### 6. Audit Your Instantly Account
 
 ```bash
 python3 scripts/instantly-audit.py --output report.md
 ```
 
-### 5. Monitor Competitors
+### 7. Monitor Competitors
 
 ```bash
 python3 scripts/competitive-monitor.py --output report.md
 ```
 
-### 6. Detect Cross-Signals
+### 8. Detect Cross-Signals
 
 ```bash
 python3 scripts/cross-signal-detector.py \
