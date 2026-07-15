@@ -1,6 +1,6 @@
 # ICP Data Collection Template
 
-> [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+> [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 
 Use this template when defining the Ideal Customer Profile. Collect all fields before writing copy.
 After collection, persist to `data/icps/{name}/profile.json`.

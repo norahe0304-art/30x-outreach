@@ -5,9 +5,9 @@ Lead Pipeline: Apollo → LeadMagic → Dedupe → Instantly
 End-to-end lead sourcing, verification, deduplication, and upload pipeline.
 
 [INPUT]: 依赖 config_loader.py 的 load_config/get_api_key/load_icp_profile/write_output
-[OUTPUT]: 对外提供 lead pipeline 执行，输出到 data/leads/{icp}/ 和 data/output/
+[OUTPUT]: 对外提供默认 preview pipeline、显式 --execute 上传与去标识运行报告
 [POS]: scripts/ 的核心执行脚本，被 SKILL.md Step 4 调用
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 
 Usage:
     # 从 ICP profile 自动读取参数（推荐）
@@ -19,10 +19,9 @@ Usage:
       --company-size "11,50" --locations "United States" \\
       --campaign-id YOUR_CAMPAIGN_UUID --volume 500
 
-    # Dry run (no upload)
-    python3 lead-pipeline.py --icp saas-vp-marketing --campaign-id YOUR_UUID --dry-run
+    python3 lead-pipeline.py --icp saas-vp-marketing --campaign-id YOUR_UUID --execute
 
-API keys: config.json > environment variables > command-line flags
+API keys: environment variables only
 """
 
 import argparse
@@ -31,7 +30,6 @@ import os
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 try:
     import requests
@@ -39,15 +37,7 @@ except ImportError:
     print("ERROR: 'requests' package required. Run: pip3 install requests", file=sys.stderr)
     sys.exit(1)
 
-try:
-    from config_loader import load_config, get_api_key, load_icp_profile, write_output, SKILL_ROOT
-except ImportError:
-    # 兼容独立运行
-    SKILL_ROOT = Path(__file__).resolve().parent.parent
-    def load_config(): return {}
-    def get_api_key(c, s): return ""
-    def load_icp_profile(n): return None
-    def write_output(m, d, **kw): pass
+from config_loader import SKILL_ROOT, get_api_key, load_config, load_icp_profile, write_output
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +239,7 @@ def verify_with_leadmagic(api_key, leads):
 
 def get_instantly_existing_emails(api_key):
     """Pull ALL existing leads from Instantly workspace for dedup."""
-    print(f"\n  📥 Fetching existing Instantly leads for dedup …")
+    print("\n  📥 Fetching existing Instantly leads for dedup …")
 
     url = "https://api.instantly.ai/api/v2/leads/list"
     headers = {
@@ -353,29 +343,23 @@ def deduplicate(leads, api_key, exclude_file=None):
 # ---------------------------------------------------------------------------
 
 def generate_personalization(lead):
-    """Generate a simple 1-line personalization based on available data."""
-    name = lead.get("first_name", "")
-    company = lead.get("company_name", "")
-    title = lead.get("title", "")
-
-    if company and title:
-        return f"Noticed you're {title} at {company} — curious how you're thinking about growth this quarter."
-    elif company:
-        return f"Been following {company}'s trajectory — impressive momentum."
-    elif title:
-        return f"As a {title}, you're probably juggling growth and efficiency right now."
-    return "Your background caught my eye — wanted to reach out."
+    signal = lead.get("personalization_signal")
+    if not isinstance(signal, dict) or signal.get("verified") is not True:
+        return ""
+    observation = str(signal.get("observation", "")).strip()
+    source = str(signal.get("source", "")).strip()
+    return observation if observation and source else ""
 
 
-def upload_to_instantly(api_key, leads, campaign_id, dry_run=False):
+def upload_to_instantly(api_key, leads, campaign_id, execute=False):
     """Upload leads to Instantly campaign in batches."""
     print(f"\n{'='*50}")
     print(f"STEP 4: Uploading {len(leads)} leads to Instantly")
     print(f"{'='*50}")
 
-    if dry_run:
-        print("  🏃 DRY RUN — skipping actual upload")
-        return {"uploaded": 0, "failed": 0, "dry_run": True}
+    if not execute:
+        print("  🔎 PREVIEW — no external write; pass --execute to upload")
+        return {"planned": len(leads), "uploaded": 0, "failed": 0, "executed": False}
 
     url = "https://api.instantly.ai/api/v2/leads"
     headers = {
@@ -434,14 +418,14 @@ def upload_to_instantly(api_key, leads, campaign_id, dry_run=False):
     if failed:
         print(f"  ❌ Failed: {failed}")
 
-    return {"uploaded": uploaded, "failed": failed, "dry_run": False}
+    return {"planned": len(leads), "uploaded": uploaded, "failed": failed, "executed": True}
 
 
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
 
-def save_report(output_dir, sourced, verified_stats, dedup_stats, upload_stats, leads_uploaded, args):
+def save_report(output_dir, sourced, verified_stats, dedup_stats, upload_stats, args):
     """Save run log as JSON."""
     timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
     report_path = os.path.join(output_dir, f"{timestamp}.json")
@@ -457,7 +441,7 @@ def save_report(output_dir, sourced, verified_stats, dedup_stats, upload_stats, 
             "campaign_id": args.campaign_id,
             "volume": args.volume,
             "exclude_file": args.exclude_file,
-            "dry_run": args.dry_run,
+            "execute": args.execute,
         },
         "results": {
             "sourced_from_apollo": sourced,
@@ -465,10 +449,6 @@ def save_report(output_dir, sourced, verified_stats, dedup_stats, upload_stats, 
             "deduplication": dedup_stats,
             "upload": upload_stats,
         },
-        "leads_uploaded": [
-            {k: v for k, v in lead.items() if k not in ("is_free_email", "is_role_based")}
-            for lead in leads_uploaded
-        ],
     }
 
     os.makedirs(output_dir, exist_ok=True)
@@ -482,17 +462,18 @@ def save_report(output_dir, sourced, verified_stats, dedup_stats, upload_stats, 
 def print_summary(sourced_count, verified_stats, dedup_stats, upload_stats):
     """Print final summary."""
     print(f"\n{'='*50}")
-    print(f"  LEAD PIPELINE SUMMARY")
+    print("  LEAD PIPELINE SUMMARY")
     print(f"{'='*50}")
     print(f"  Sourced from Apollo:     {sourced_count:>6}")
     print(f"  Verified (LeadMagic):    {verified_stats['valid']:>6}  ({verified_stats['valid']/max(sourced_count,1)*100:.1f}%)")
     print(f"  Already in Instantly:    {dedup_stats['instantly_dupes']:>6}")
     print(f"  Excluded (burned list):  {dedup_stats['burned_dupes']:>6}")
-    print(f"  Net new uploaded:        {upload_stats['uploaded']:>6}")
+    print(f"  Net new ready:           {upload_stats['planned']:>6}")
+    print(f"  Uploaded:                {upload_stats['uploaded']:>6}")
     if upload_stats.get('failed'):
         print(f"  Failed uploads:          {upload_stats['failed']:>6}")
-    if upload_stats.get('dry_run'):
-        print(f"  ⚠️  DRY RUN — nothing was uploaded")
+    if not upload_stats.get('executed'):
+        print("  🔎 PREVIEW — nothing was uploaded")
     print(f"{'='*50}\n")
 
 
@@ -506,27 +487,19 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Full pipeline run
   python3 lead-pipeline.py \\
     --titles "VP Marketing,CMO" --industries "SaaS" \\
     --company-size "11,50" --locations "United States" \\
     --campaign-id abc-123 --volume 200
 
-  # Dry run (no upload)
   python3 lead-pipeline.py \\
     --titles "CTO,VP Engineering" --company-size "51,200" \\
-    --campaign-id abc-123 --volume 100 --dry-run
+    --campaign-id abc-123 --volume 100 --execute
         """,
     )
 
     parser.add_argument("--icp", default=None,
                         help="ICP name — reads targeting from data/icps/{name}/profile.json")
-    parser.add_argument("--apollo-key", default=None,
-                        help="Apollo API key (config.json > env > flag)")
-    parser.add_argument("--leadmagic-key", default=None,
-                        help="LeadMagic API key (config.json > env > flag)")
-    parser.add_argument("--instantly-key", default=None,
-                        help="Instantly API key (config.json > env > flag)")
     parser.add_argument("--titles", default=None, help="Comma-separated job titles (overrides ICP)")
     parser.add_argument("--industries", default="", help="Comma-separated industries/keywords")
     parser.add_argument("--company-size", default="", help="Employee range, e.g. '11,50'")
@@ -537,16 +510,15 @@ Examples:
     parser.add_argument("--exclude-file", default=None, help="Path to CSV of burned/excluded emails")
     parser.add_argument("--output-dir", default="./data/lead-pipeline-runs/",
                         help="Directory for run logs (default: ./data/lead-pipeline-runs/)")
-    parser.add_argument("--dry-run", action="store_true", help="Run pipeline but skip Instantly upload")
+    parser.add_argument("--execute", action="store_true",
+                        help="Upload net-new leads to Instantly; preview is the default")
 
     args = parser.parse_args()
 
-    # ── 加载配置 (config.json > env > flags) ──
     config = load_config()
-
-    args.apollo_key = args.apollo_key or get_api_key(config, "apollo") or os.environ.get("APOLLO_API_KEY")
-    args.leadmagic_key = args.leadmagic_key or get_api_key(config, "leadmagic") or os.environ.get("LEADMAGIC_API_KEY")
-    args.instantly_key = args.instantly_key or get_api_key(config, "instantly") or os.environ.get("INSTANTLY_API_KEY")
+    apollo_key = get_api_key(config, "apollo")
+    leadmagic_key = get_api_key(config, "leadmagic")
+    instantly_key = get_api_key(config, "instantly")
 
     # ── 从 ICP profile 加载搜索参数 ──
     icp_name = args.icp
@@ -571,14 +543,14 @@ Examples:
         print("ERROR: --titles required (or provide --icp with apollo_search_params.person_titles)")
         sys.exit(1)
 
-    if not args.apollo_key:
-        print("ERROR: Apollo API key required. Set in config.json, APOLLO_API_KEY env var, or --apollo-key.")
+    if not apollo_key:
+        print("ERROR: APOLLO_API_KEY environment variable is required.")
         sys.exit(1)
-    if not args.leadmagic_key:
-        print("ERROR: LeadMagic API key required. Set in config.json, LEADMAGIC_API_KEY env var, or --leadmagic-key.")
+    if not leadmagic_key:
+        print("ERROR: LEADMAGIC_API_KEY environment variable is required.")
         sys.exit(1)
-    if not args.instantly_key:
-        print("ERROR: Instantly API key required. Set in config.json, INSTANTLY_API_KEY env var, or --instantly-key.")
+    if not instantly_key:
+        print("ERROR: INSTANTLY_API_KEY environment variable is required.")
         sys.exit(1)
 
     start_time = time.time()
@@ -587,12 +559,12 @@ Examples:
 
     print(f"\n🚀 Lead Pipeline Started — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"   Target: {args.volume} leads → Campaign {args.campaign_id}")
-    if args.dry_run:
-        print(f"   ⚠️  DRY RUN MODE — will not upload to Instantly")
+    if not args.execute:
+        print("   🔎 PREVIEW MODE — will not upload to Instantly")
 
     # Step 1: Source from Apollo
     sourced_leads = source_from_apollo(
-        api_key=args.apollo_key,
+        api_key=apollo_key,
         titles=args.titles,
         industries=args.industries,
         company_size=args.company_size,
@@ -611,7 +583,7 @@ Examples:
         json.dump(sourced_leads, f, indent=2)
 
     # Step 2: Verify via LeadMagic
-    verified_leads, verified_stats = verify_with_leadmagic(args.leadmagic_key, sourced_leads)
+    verified_leads, verified_stats = verify_with_leadmagic(leadmagic_key, sourced_leads)
 
     if not verified_leads:
         print("\n❌ No leads passed verification. Exiting.")
@@ -622,14 +594,14 @@ Examples:
         json.dump(verified_leads, f, indent=2)
 
     # Step 3: Deduplicate
-    deduped_leads, dedup_stats = deduplicate(verified_leads, args.instantly_key, args.exclude_file)
+    deduped_leads, dedup_stats = deduplicate(verified_leads, instantly_key, args.exclude_file)
 
     if not deduped_leads:
         print("\n⚠️  All leads already exist in Instantly. Nothing to upload.")
-        upload_stats = {"uploaded": 0, "failed": 0, "dry_run": args.dry_run}
+        upload_stats = {"planned": 0, "uploaded": 0, "failed": 0, "executed": args.execute}
     else:
         # Step 4: Upload to Instantly
-        upload_stats = upload_to_instantly(args.instantly_key, deduped_leads, args.campaign_id, args.dry_run)
+        upload_stats = upload_to_instantly(instantly_key, deduped_leads, args.campaign_id, args.execute)
 
     # Step 5: Report
     print_summary(len(sourced_leads), verified_stats, dedup_stats, upload_stats)
@@ -640,7 +612,6 @@ Examples:
         verified_stats=verified_stats,
         dedup_stats=dedup_stats,
         upload_stats=upload_stats,
-        leads_uploaded=deduped_leads,
         args=args,
     )
 
@@ -653,15 +624,15 @@ Examples:
             json.dump(sourced_leads, f, indent=2)
         with open(icp_leads_dir / "verified.json", "w") as f:
             json.dump(verified_leads, f, indent=2)
-        with open(icp_leads_dir / "uploaded.json", "w") as f:
+        with open(icp_leads_dir / "ready.json", "w") as f:
             json.dump(deduped_leads, f, indent=2)
-        print(f"  📁 ICP lead data saved to data/leads/{icp_name}/")
+        print(f"  📁 ICP lead data saved locally to data/leads/{icp_name}/")
 
     # ── 统一格式输出 (30x 新增) ──
     write_output(
         module="lead-pipeline",
         icp=icp_name,
-        summary=f"Sourced {len(sourced_leads)}, verified {verified_stats['valid']}, uploaded {upload_stats['uploaded']}",
+        summary=f"Sourced {len(sourced_leads)}, verified {verified_stats['valid']}, ready {upload_stats['planned']}, uploaded {upload_stats['uploaded']}",
         data={
             "sourced": len(sourced_leads),
             "verification": verified_stats,

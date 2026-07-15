@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thirtyx-outreach"
+version = "0.2.0"
+description = "Auditable, human-gated demand experiments from verified signals to compounding learning."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Nora He"}]
+keywords = ["ai", "outbound", "demand-generation", "growth", "sales-automation", "experimentation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+]
+dependencies = [
+  "jsonschema>=4.18.0",
+  "requests>=2.28.0",
+]
+
+[project.scripts]
+30x = "thirtyx.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/norahe0304-art/30x-outreach"
+Repository = "https://github.com/norahe0304-art/30x-outreach"
+Issues = "https://github.com/norahe0304-art/30x-outreach/issues"
+
+[tool.setuptools.packages.find]
+include = ["thirtyx*"]
+
+[tool.setuptools.package-data]
+"thirtyx.demo" = ["*.json"]
+"thirtyx.contracts" = ["*.json"]

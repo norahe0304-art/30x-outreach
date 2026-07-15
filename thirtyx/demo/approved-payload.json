@@ -1,0 +1,17 @@
+{
+  "campaign_id": "demo-ai-demand-001",
+  "sequence_version": "v1",
+  "prospects": [
+    {
+      "email": "alex@northstar.example",
+      "company": "Northstar AI",
+      "approved_angle": "A",
+      "angle_drafts": {
+        "A": {
+          "subject": "your first lifecycle hire",
+          "body": "Teams making their first lifecycle hire often need campaign learning to survive beyond one person's notes. Northstar AI's open role made me wonder whether a reviewable signal-to-experiment workflow would be useful.\n\nWorth sharing the one-page workflow?"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# [INPUT]: 依赖 pyproject.toml 与 GitHub Actions workflow 依赖
+# [OUTPUT]: 对外提供每周 Python 和 Actions 版本更新 PR
+# [POS]: .github 的依赖维护配置，降低已知漏洞与漂移
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

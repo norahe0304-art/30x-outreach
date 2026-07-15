@@ -1,0 +1,31 @@
+# [INPUT]: 依赖 v* git tag、pyproject package、tests 与 GitHub contents permission
+# [OUTPUT]: 对外提供验证后的 wheel、sdist 与自动生成 GitHub Release notes
+# [POS]: workflows 的发布边界；只在 tag 上运行，不发布 PyPI
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build
+      - run: python -m build
+      - run: python -m pip install dist/*.whl
+      - run: python -m compileall -q thirtyx scripts tests
+      - run: python -m unittest discover -s tests -v
+      - run: 30x demo --no-color --output /tmp/30x-demo-report.html
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

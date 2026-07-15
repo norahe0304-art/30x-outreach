@@ -1,7 +1,13 @@
 .env
 .env.local
+.venv/
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
+.30x/
+/30x-demo-report.html
 .DS_Store
 config.json
 
@@ -11,3 +17,7 @@ data/icps/*/profile.json
 data/leads/
 data/intel/
 data/output/
+data/lead-pipeline-runs/
+data/cold-outbound-approved.json
+data/cold-outbound-history.json
+data/*-approval.json

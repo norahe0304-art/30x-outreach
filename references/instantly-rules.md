@@ -1,5 +1,7 @@
 # Instantly-Specific Rules
 
+> [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+
 ## Valid Variables (ONLY these — no others)
 
 | Variable | Usage |
@@ -31,9 +33,9 @@
   - Step 6 (breakup): Day 7-14 after Step 5
 
 ## A/B Testing
-- **Step 1 only:** Test 2 subject line variants (A/B)
-- Don't A/B test body copy in early campaigns — isolate subject line variable first
-- Winning subject line = whichever hits higher open rate at 100+ sends per variant
+- Test one major variable at a time.
+- Define the primary outcome and minimum sample before launch.
+- Treat open rate as a noisy diagnostic; use positive replies or another downstream outcome for decisions.
 
 ## Signature Format
 ```
@@ -46,8 +48,7 @@
 
 ### Send Limits
 - **Safe:** 30 emails/day per account
-- **Aggressive:** 50 emails/day per account (only with score 90+, warmed 30+ days)
-- Never exceed 50/day per account without explicit discussion
+- Treat any increase above the configured default as a new risk decision requiring sender-health evidence and explicit operator review.
 
 ### Warmup Requirements
 - **Minimum:** 14 days warmup before first campaign

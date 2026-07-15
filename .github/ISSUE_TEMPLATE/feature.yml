@@ -1,0 +1,32 @@
+# [INPUT]: 依赖用户问题、最小结果、替代方案与安全影响
+# [OUTPUT]: 对外提供以 outcome 为中心的 feature request form
+# [POS]: ISSUE_TEMPLATE 的产品需求入口；避免只提交工具名或实现偏好
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+name: Feature request
+description: Propose a focused user outcome or provider extension
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who is blocked, during which workflow, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Smallest useful outcome
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround
+  - type: textarea
+    id: safety
+    attributes:
+      label: Evidence, privacy, approval, or external-write impact
+    validations:
+      required: true

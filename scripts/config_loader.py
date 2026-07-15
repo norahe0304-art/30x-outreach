@@ -2,10 +2,10 @@
 """
 config_loader.py — 统一配置加载器
 
-[INPUT]: 依赖 config.json 或 config.example.json
+[INPUT]: 依赖非敏感 config.json/config.example.json 与环境变量凭据
 [OUTPUT]: 对外提供 load_config(), get_api_key(), get_sending_config(), get_competitors(), write_output()
 [POS]: scripts/ 的基础设施，被所有其他脚本依赖
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
 import json
@@ -42,7 +42,7 @@ def load_config():
             return json.load(f)
 
     if example_path.exists():
-        print(f"  ⚠️  No config.json found. Using config.example.json (API keys will be empty)")
+        print("  ⚠️  No config.json found. Using non-secret defaults from config.example.json")
         with open(example_path) as f:
             return json.load(f)
 
@@ -50,8 +50,7 @@ def load_config():
     sys.exit(1)
 
 
-def get_api_key(config, service):
-    """从 config 或环境变量获取 API key"""
+def get_api_key(_config, service):
     env_map = {
         "apollo": "APOLLO_API_KEY",
         "leadmagic": "LEADMAGIC_API_KEY",
@@ -60,11 +59,7 @@ def get_api_key(config, service):
     }
 
     env_var = env_map.get(service, "")
-    env_val = os.environ.get(env_var, "")
-    if env_val:
-        return env_val
-
-    return config.get("apis", {}).get(service, {}).get("key", "")
+    return os.environ.get(env_var, "")
 
 
 def get_sending_config(config):
