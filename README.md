@@ -56,6 +56,30 @@ flowchart LR
 
 The durable artifact is not just copy. It is the chain of evidence connecting audience, message, approval, result, and the next decision.
 
+## Mounted Outreach Agent
+
+30x also ships as a mounted [Adaptive Marketing Agent OS](https://github.com/norahe0304-art/adaptive-marketing-agent-os) consumer. Agent Core owns the role, playbook selection, runtime boundaries, structured run readbacks, and GEB learning route. The `30x-outreach` skill and Python package remain the only owners of evidence validation, exact-payload approval, provider execution gates, deterministic decisions, and the aggregate hash-chain ledger.
+
+The mounted agent exposes three business playbooks:
+
+| Playbook | Outcome |
+|---|---|
+| `discover-buying-signals` | Produce sourced, timestamped, contradiction-checked account signals |
+| `run-outreach-experiment` | Build verified audience/campaign contracts and an exact approval-ready provider preview |
+| `observe-and-generate-next-wave` | Convert aggregate analytics into a deterministic decision and one-variable next-wave brief |
+
+Validate and boot any playbook without credentials or external writes:
+
+```bash
+python3 protocol/scripts/validate_mounted_agents.py --root . --glob 'agents/*.agent.md'
+python3 protocol/scripts/dry_run_agent.py \
+  --root . \
+  --agent agents/thirtyx-outreach.agent.md \
+  --playbook run-outreach-experiment
+```
+
+Agent Core state under `agents/state/` records what the agent did and how semantic learning was routed. The ignored `.30x/learning.jsonl` records aggregate experiment truth. Neither stores recipient identity.
+
 ## What 30x actually enforces
 
 | Risk | Executable control |
@@ -148,7 +172,7 @@ The provider-neutral pipeline only calls a destination when `execute=True` and e
 
 ## Live integrations
 
-The current live adapters support Apollo sourcing, LeadMagic verification, Instantly dedupe/upload, and SMTP sending. They remain under `scripts/` while each is migrated behind the stable provider contract.
+The current live adapters support Apollo sourcing, LeadMagic verification, Instantly dedupe/upload, and SMTP sending. They remain under `scripts/` while each is migrated behind the stable provider contract. The mounted agent binds those surfaces read/propose-first; it cannot grant itself provider-write permission.
 
 ```bash
 git clone https://github.com/norahe0304-art/30x-outreach.git

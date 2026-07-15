@@ -3,6 +3,8 @@ Python 3.9+ + JSON Schema + requests + unittest
 
 <directory>
 thirtyx/ - 可安装 package：CLI、audience gate、评估、观测、决策、审批、provider、渲染与 learning ledger
+agents/ - 30x Outreach mounted Agent Core：tenant-neutral role、overlay、三条 playbook workflow 与语义 run-state
+protocol/ - vendored Adaptive Marketing Agent OS v0.3.10；只读 schemas、validators、reference roles 与 dry-run
 scripts/ - 旧式 SaaS adapter 与兼容 CLI；所有外部写入默认关闭
 docs/ - 架构、provider、roadmap 与 changelog
 assets/ - README 与发布使用的真实离线 demo 视觉
@@ -33,8 +35,12 @@ LICENSE - MIT 许可证
 - 公共 demo 完全虚构并标记 `DEMO DATA`；联系人 PII 不进入仓库或 learning ledger。
 - 实验在执行前冻结 hypothesis、primary metric、guardrails、sample 与 SCALE/KILL/LEARN 阈值；bounce `>=5%` 绝对 KILL、`>=10%` emergency stop，campaign 不得放宽。
 - package 核心不得依赖具体 SaaS；外部 provider 通过 Protocol 与 entry point 接入。
+- Agent Core 只拥有 role、playbook、runtime boundary 与 semantic readback；不得复制 30x 的 evidence、approval、decision 或 experiment ledger。
+- Agent Core 的 `agents/state/` 与 30x 的 `.30x/learning.jsonl` 是两个真相域：前者记录 agent run，后者记录去标识实验结果。
 
 ## 依赖方向
+
+`Agent Core role + overlay → playbook → 30x SKILL/CLI`
 
 `demo → evaluation + decision → rendering → cli`
 
@@ -44,6 +50,7 @@ LICENSE - MIT 许可证
 
 ## 变更日志
 
+- 2026-07-15: pin Adaptive Marketing Agent OS v0.3.10，挂载 Outreach Growth Operator、signal discovery / experiment / next-wave 三条 playbook，并隔离 semantic run-state 与 experiment ledger。
 - 2026-07-15: 新增 verified + signal-backed audience contract、全外部写入 preflight 与 Instantly aggregate → decision → ledger 闭环；安全 guardrail 可在小样本阶段立即 KILL，bounce 5%/10% 为不可放宽硬边界。
 - 2026-07-14: 建立可安装 `30x` CLI、结构化四态决策、provider contract、离线 HTML proof 与 hash-chain learning ledger。
 - 2026-07-14: 引入十维确定性评估、预注册实验、不可变审批、默认 preview、隐私安全历史、schemas、tests 与 CI；移除人格模拟评审和明文凭据。

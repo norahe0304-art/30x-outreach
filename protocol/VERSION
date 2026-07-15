@@ -1,0 +1,5 @@
+name: adaptive-marketing-agent-os
+version: v0.3.10
+source_commit: 3b271501f27d0f58e6c802c1545a19ed7f80e19d
+mechanism: vendored-copy
+resync: re-run scaffold or re-copy agents/{protocols,roles} + scripts at the new tag

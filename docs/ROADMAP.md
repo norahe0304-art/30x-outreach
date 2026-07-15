@@ -8,6 +8,7 @@
 
 ## Unreleased — Evidence-gated live learning
 
+- Mount Adaptive Marketing Agent OS v0.3.10 with signal-discovery, experiment-execution, and next-wave-learning playbooks.
 - Require verified, non-free, non-role email evidence and a sourced buying signal for every executed recipient.
 - Bind campaign identity to an exact audience batch before approval and external writes.
 - Convert Instantly aggregates into deterministic observations and optional hash-chain records.
@@ -34,7 +35,7 @@
 ## v0.4 — Experiment workspace
 
 - Compare sequence versions and segments without changing frozen records.
-- Generate a next-wave brief from verified prior decisions.
+- Add a versioned next-wave brief JSON contract and CLI artifact for the existing Agent Core learning playbook.
 - Export redacted Markdown and HTML experiment timelines.
 - Add optional model review with explicit provider, prompt, and provenance.
 

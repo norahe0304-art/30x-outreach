@@ -8,6 +8,20 @@
 
 30x separates creative judgment from the controls that must be deterministic. AI can help propose an ICP, hypothesis, or sequence. It cannot silently invent evidence, approve itself, change a frozen threshold, or write to an external system.
 
+## Agent Core composition
+
+```mermaid
+flowchart TB
+    R[Outreach Growth Operator role] --> P{Selected playbook}
+    O[30x tenant overlay] --> P
+    P --> S[30x Outreach skill and CLI]
+    S --> X[Evidence, approval, execution, decision]
+    X --> E[Aggregate experiment ledger]
+    P --> A[Agent run readback and GEB route]
+```
+
+The mounted agent is an orchestration layer, not a second growth engine. Role and workflow files define intent, capability scope, approval surfaces, and semantic readback. The 30x package enforces machine gates. `agents/state/` stores bounded agent-run summaries and pointers; `.30x/learning.jsonl` stores hash-chained aggregate experiment evidence. Merging them would either leak project data into agent memory or weaken the experiment chain.
+
 ## Data flow
 
 ```mermaid
@@ -39,6 +53,7 @@ flowchart LR
 | Execution | Preview by default; writes require `--execute`; SMTP journals before delivery | Perform no write or stop on unresolved pending delivery |
 | Decision | Thresholds are frozen; safety guardrails may KILL before minimum sample; 5%/10% bounce ceilings cannot be relaxed | Return one deterministic state plus an emergency-pause reason at 10% |
 | Memory | Aggregate records form a SHA-256 chain | Report the first broken record |
+| Agent memory | Semantic readbacks may point to experiment evidence but may not copy recipient or raw provider data | Reject promotion or redact to a bounded pointer |
 
 ## Core modules
 
@@ -52,6 +67,8 @@ flowchart LR
 - `thirtyx/learning/` stores aggregate experiment memory in a hash-chained JSONL ledger and exposes a head for external pinning.
 - `thirtyx/rendering/` creates terminal and single-file HTML proof artifacts.
 - `scripts/` contains transitional live adapters and compatibility entry points.
+- `agents/` composes the Outreach role, 30x overlay, three playbooks, and semantic run-state ledger.
+- `protocol/` is the read-only Agent Core v0.3.10 pin used to validate and dry-run the mounted agent.
 
 ## Contracts
 

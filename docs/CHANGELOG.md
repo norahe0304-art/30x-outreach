@@ -12,6 +12,9 @@ All notable changes are documented here. The project follows semantic versioning
 
 ### Added
 
+- Adaptive Marketing Agent OS v0.3.10 pin plus a mounted Outreach Growth Operator.
+- Three Agent Core playbooks for buying-signal discovery, preview-first experiment preparation, and observation-to-next-wave learning.
+- Agent Core contract tests covering playbook/capability binding, dual approval gates, and separation of semantic versus experiment memory.
 - `audience-batch` contract requiring provider verification, timestamps, non-free/non-role emails, and at least one sourced buying signal per recipient.
 - `30x preflight` to bind a quality-approved campaign to its exact execution audience.
 - `30x observe-instantly` to convert aggregate provider analytics into an observation, deterministic decision, and optional learning-ledger record.
@@ -19,6 +22,7 @@ All notable changes are documented here. The project follows semantic versioning
 
 ### Changed
 
+- `30x-outreach` is now the atomic execution skill under Agent Core; deterministic evidence, approval, provider, decision, and ledger logic remain in the package rather than the role layer.
 - Provider destinations, the legacy Instantly uploader, and the SMTP sender now fail closed before external writes when audience proof is missing.
 - Safety guardrail failures return `KILL` immediately, even before the preregistered minimum sample is reached.
 - Bounce rate now has non-overridable system ceilings: `>=5%` returns absolute `KILL`; `>=10%` returns emergency-pause guidance for all sending.

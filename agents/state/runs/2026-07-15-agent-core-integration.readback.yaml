@@ -1,0 +1,69 @@
+# [INPUT]: Depends on protocol/VERSION, the mounted agent, Outreach role/overlay/workflows, and validator/dry-run evidence.
+# [OUTPUT]: Provides the bounded apply-mode readback for the 30x Outreach Agent Core integration.
+# [POS]: agents/state/runs evidence record; stores integration outcome and safety boundaries, never raw runtime transcript or provider data.
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+
+run_readback:
+  id: 2026-07-15-agent-core-integration
+  mounted_agent: agents/thirtyx-outreach.agent.md
+  playbook: run-outreach-experiment
+  runtime:
+    name: Codex
+    version: GPT-5
+    surface: codex
+  mode: apply
+  started_at: "2026-07-15T00:00:00-04:00"
+  completed_at: "2026-07-15T00:00:00-04:00"
+  approval_state: active_user_requested_full_outreach_agent_core_integration
+  evidence_refs:
+    - https://github.com/norahe0304-art/adaptive-marketing-agent-os/tree/v0.3.10
+    - protocol/VERSION
+    - AGENTS.md
+    - SKILL.md
+    - docs/ARCHITECTURE.md
+    - agents/thirtyx-outreach.agent.md
+    - agents/outreach-growth-operator.role.md
+    - agents/thirtyx-outreach.overlay.md
+    - agents/workflows/thirtyx-outreach-discover-buying-signals.workflow.md
+    - agents/workflows/thirtyx-outreach-run-outreach-experiment.workflow.md
+    - agents/workflows/thirtyx-outreach-observe-and-generate-next-wave.workflow.md
+    - protocol/scripts/validate_mounted_agents.py
+    - protocol/scripts/dry_run_agent.py
+  actions:
+    proposed: []
+    applied:
+      - pinned Adaptive Marketing Agent OS v0.3.10 under protocol/
+      - mounted the tenant-neutral Outreach Growth Operator on the 30x overlay
+      - added signal-discovery, experiment-execution, and next-wave-learning playbooks
+      - bound Agent Core semantic readbacks separately from the 30x aggregate hash-chain ledger
+      - preserved preview-first execution and the 30x exact-payload approval gate as the final provider-write boundary
+    blocked:
+      - live Instantly access and provider writes remain blocked until a project-specific runtime review, verified audience, exact approval, and explicit execute intent exist
+  files_changed:
+    - AGENTS.md
+    - README.md
+    - SKILL.md
+    - pyproject.toml
+    - docs/ARCHITECTURE.md
+    - docs/CHANGELOG.md
+    - docs/ROADMAP.md
+    - agents/
+    - protocol/
+    - tests/test_schemas.py
+    - tests/AGENTS.md
+  geb_delta:
+    verdict: no-op
+    class: ""
+    target: ""
+    path: ""
+    evidence_ref: agents/state/runs/2026-07-15-agent-core-integration.readback.yaml
+    reason: "The requested integration is represented directly by its owning role, overlay, workflows, tests, and architecture docs; no additional tenant fact or protocol mutation should be promoted from the bootstrap run."
+    safety_check: "no credentials, OAuth tokens, raw exports, raw transcripts, recipient identity, or unreviewed tenant facts"
+  final_readback: "Pinned Agent Core v0.3.10 and mounted the 30x Outreach Agent with three propose-first playbooks. The 30x package remains the deterministic evidence, approval, execution, decision, and experiment-memory engine; no external provider write occurred."
+  not_stored:
+    - credentials
+    - OAuth tokens
+    - provider account or campaign ids
+    - raw lead exports
+    - recipient identity
+    - raw transcript

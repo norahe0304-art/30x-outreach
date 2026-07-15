@@ -5,15 +5,17 @@ argument-hint: <icp-name>
 ---
 
 <!--
-[INPUT]: 依赖 30x CLI、data profiles、references、schemas 与 preview-first live adapters
-[OUTPUT]: 对外提供从 ICP 到 learning ledger 的 agent 执行协议
-[POS]: repo 的 agent workflow；不得绕过 evidence、approval、threshold 或 execution gate
+[INPUT]: 依赖 mounted Agent Core playbook、30x CLI、data profiles、references、schemas 与 preview-first adapters
+[OUTPUT]: 对外提供从 buying signal 到 approval、experiment decision 与 next-wave brief 的原子执行协议
+[POS]: Outreach Agent Core 调用的 domain skill；不得拥有 role/tenant state，也不得绕过 deterministic gates
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 -->
 
 # 30x Outreach
 
 Operate outbound as a compounding learning system. Preserve the reasoning between signal, message, result, and next action instead of treating each campaign as disposable copy.
+
+When invoked through `agents/thirtyx-outreach.agent.md`, first load the selected Agent Core playbook and its tenant overlay. This skill owns the atomic 30x work; Agent Core owns orchestration and semantic readback. Never copy recipient data or aggregate experiment records into `agents/state/`.
 
 ## Dynamic context
 
