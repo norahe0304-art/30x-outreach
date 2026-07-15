@@ -210,7 +210,7 @@ Export Instantly aggregate analytics with the exact campaign ID, then convert it
   --ledger .30x/learning.jsonl
 ```
 
-Safety guardrails such as bounce rate can KILL immediately; they do not wait for the minimum sample. For other outcomes, compute or inspect the decision from the frozen campaign:
+Safety guardrails such as bounce rate can KILL immediately; they do not wait for the minimum sample. Campaign rules may be stricter, but may never relax the system ceilings: bounce `>= 5%` is an absolute KILL, and bounce `>= 10%` requires an all-sending emergency pause plus verification audit. For other outcomes, compute or inspect the decision from the frozen campaign:
 
 ```bash
 30x decide \

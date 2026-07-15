@@ -21,6 +21,7 @@ All notable changes are documented here. The project follows semantic versioning
 
 - Provider destinations, the legacy Instantly uploader, and the SMTP sender now fail closed before external writes when audience proof is missing.
 - Safety guardrail failures return `KILL` immediately, even before the preregistered minimum sample is reached.
+- Bounce rate now has non-overridable system ceilings: `>=5%` returns absolute `KILL`; `>=10%` returns emergency-pause guidance for all sending.
 
 ### Security
 

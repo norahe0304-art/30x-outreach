@@ -37,7 +37,7 @@ flowchart LR
 | Quality | Ten transparent lenses plus hard blockers | Return `REVISE` |
 | Approval | SHA-256 binds reviewer to exact JSON and recipient count | Reject changed payload |
 | Execution | Preview by default; writes require `--execute`; SMTP journals before delivery | Perform no write or stop on unresolved pending delivery |
-| Decision | Thresholds are frozen; safety guardrails may KILL before minimum sample | Return one deterministic state |
+| Decision | Thresholds are frozen; safety guardrails may KILL before minimum sample; 5%/10% bounce ceilings cannot be relaxed | Return one deterministic state plus an emergency-pause reason at 10% |
 | Memory | Aggregate records form a SHA-256 chain | Report the first broken record |
 
 ## Core modules
@@ -45,7 +45,7 @@ flowchart LR
 - `thirtyx/evaluation.py` performs deterministic copy and experiment checks.
 - `thirtyx/audience.py` rejects unverified, unsignaled, duplicate, or campaign-mismatched recipients.
 - `thirtyx/observation.py` maps Instantly aggregate counts into provider-neutral rates without recipient identity.
-- `thirtyx/decision.py` maps aggregate observations to `COLLECT`, `SCALE`, `KILL`, or `LEARN`.
+- `thirtyx/decision.py` maps aggregate observations to `COLLECT`, `SCALE`, `KILL`, or `LEARN`, enforcing absolute bounce KILL at 5% and emergency pause at 10% before campaign-level rules.
 - `thirtyx/approval.py` canonicalizes payloads and verifies immutable approval manifests.
 - `thirtyx/pipeline.py` orchestrates source, verify, dedupe, and destination protocols.
 - `thirtyx/providers/` discovers third-party adapters without coupling core logic to a SaaS vendor.

@@ -10,7 +10,7 @@ audience.py: verified email、signal evidence、campaign identity 与 recipient 
 evaluation.py: 十维确定性 sequence 评估与硬阻断。
 approval.py: canonical JSON、SHA-256 manifest 与篡改验证。
 observation.py: 将 Instantly aggregate analytics 转成无 PII experiment observation。
-decision.py: 用结构化阈值计算 COLLECT/SCALE/KILL/LEARN。
+decision.py: 用结构化阈值计算四态决策，并强制 5% absolute KILL / 10% emergency stop bounce 边界。
 pipeline.py: provider-neutral 的 source→verify→dedupe→stage orchestration。
 contracts/: wheel 内置 JSON Schema 与运行时 contract validation。
 demo/: wheel 内置、无密钥的完整演示数据。

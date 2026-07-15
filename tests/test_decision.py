@@ -1,6 +1,6 @@
 """
 [INPUT]: 依赖 thirtyx.decision 与 wheel 内置 campaign/observation
-[OUTPUT]: 验证 COLLECT/SCALE/KILL/LEARN 四态决策及 identity 绑定
+[OUTPUT]: 验证四态决策、5%/10% bounce 硬边界及 identity 绑定
 [POS]: tests/ 的确定性学习引擎回归测试
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
@@ -25,6 +25,13 @@ class DecisionTests(unittest.TestCase):
         observation["metrics"].update(metrics)
         return decide_experiment(self.campaign, observation)
 
+    def decide_with_loose_bounce_guardrail(self, bounce_rate):
+        campaign = copy.deepcopy(self.campaign)
+        campaign["experiment"]["guardrails"][0]["value"] = 0.5
+        observation = copy.deepcopy(self.observation)
+        observation["metrics"]["bounce_rate"] = bounce_rate
+        return decide_experiment(campaign, observation)
+
     def test_scale(self):
         self.assertEqual(self.decide(positive_reply_rate=0.03)["decision"], "SCALE")
 
@@ -47,6 +54,19 @@ class DecisionTests(unittest.TestCase):
         observation["sample_size"] = 20
         observation["metrics"]["bounce_rate"] = 0.2
         self.assertEqual(decide_experiment(self.campaign, observation)["decision"], "KILL")
+
+    def test_absolute_bounce_ceiling_cannot_be_relaxed(self):
+        decision = self.decide_with_loose_bounce_guardrail(0.05)
+        self.assertEqual(decision["decision"], "KILL")
+        self.assertIn("absolute bounce ceiling", decision["reason"])
+
+    def test_emergency_bounce_ceiling_requires_global_pause(self):
+        decision = self.decide_with_loose_bounce_guardrail(0.10)
+        self.assertEqual(decision["decision"], "KILL")
+        self.assertIn("pause all sending", decision["reason"])
+
+    def test_below_absolute_ceiling_can_follow_campaign_rules(self):
+        self.assertEqual(self.decide_with_loose_bounce_guardrail(0.049)["decision"], "SCALE")
 
     def test_rejects_mismatched_observation(self):
         observation = copy.deepcopy(self.observation)

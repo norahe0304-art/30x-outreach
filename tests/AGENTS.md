@@ -10,7 +10,7 @@ test_schemas.py: 验证 wheel 内置六份 JSON Schema 与 package demo/core 输
 test_audience.py: 验证 verified + signal-backed audience、campaign 绑定与 recipient 去重。
 test_observation.py: 验证 Instantly aggregate rate mapping、identity 绑定与 ledger 写入。
 test_lead_pipeline_safety.py: 验证默认 staging 不上传、无 verification 或 signal 无法 execute。
-test_decision.py: 验证四态决策、小样本安全 KILL、identity 绑定与 learning ledger 防篡改链。
+test_decision.py: 验证四态决策、小样本安全 KILL、5%/10% bounce 硬边界、identity 绑定与 learning ledger 防篡改链。
 test_pipeline.py: 验证 provider-neutral 去重、audience-gated execute 与 runnable plugin registry。
 
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md

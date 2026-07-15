@@ -31,7 +31,7 @@ LICENSE - MIT 许可证
 - 个性化只能引用带 source 的 verified observation；无证据时宁可留空。
 - 凭据只从环境变量读取，不进入 CLI 参数、配置、报告或 ledger。
 - 公共 demo 完全虚构并标记 `DEMO DATA`；联系人 PII 不进入仓库或 learning ledger。
-- 实验在执行前冻结 hypothesis、primary metric、guardrails、sample 与 SCALE/KILL/LEARN 阈值。
+- 实验在执行前冻结 hypothesis、primary metric、guardrails、sample 与 SCALE/KILL/LEARN 阈值；bounce `>=5%` 绝对 KILL、`>=10%` emergency stop，campaign 不得放宽。
 - package 核心不得依赖具体 SaaS；外部 provider 通过 Protocol 与 entry point 接入。
 
 ## 依赖方向
@@ -44,7 +44,7 @@ LICENSE - MIT 许可证
 
 ## 变更日志
 
-- 2026-07-15: 新增 verified + signal-backed audience contract、全外部写入 preflight 与 Instantly aggregate → decision → ledger 闭环；安全 guardrail 可在小样本阶段立即 KILL。
+- 2026-07-15: 新增 verified + signal-backed audience contract、全外部写入 preflight 与 Instantly aggregate → decision → ledger 闭环；安全 guardrail 可在小样本阶段立即 KILL，bounce 5%/10% 为不可放宽硬边界。
 - 2026-07-14: 建立可安装 `30x` CLI、结构化四态决策、provider contract、离线 HTML proof 与 hash-chain learning ledger。
 - 2026-07-14: 引入十维确定性评估、预注册实验、不可变审批、默认 preview、隐私安全历史、schemas、tests 与 CI；移除人格模拟评审和明文凭据。
 

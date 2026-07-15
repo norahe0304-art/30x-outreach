@@ -66,6 +66,7 @@ The durable artifact is not just copy. It is the chain of evidence connecting au
 | Approval drift | Reviewer, recipient count, campaign, and exact JSON are SHA-256 bound |
 | Accidental sending | Preview is default; destination writes require `--execute` |
 | Post-hoc storytelling | Hypothesis, metric, guardrails, sample, and thresholds freeze before launch |
+| Deliverability damage | `>=5%` bounce always KILLs; `>=10%` requires an all-sending emergency pause |
 | Forgotten experiments | Aggregate decisions append to a SHA-256 chained JSONL ledger |
 | Vendor lock-in | Source, verifier, and destination are Python Protocols discovered by entry point |
 
@@ -123,7 +124,7 @@ Start from the schemas and package demo:
 Decision states are deliberately small:
 
 - `COLLECT` — minimum evidence is missing.
-- `KILL` — a safety guardrail failed or the primary metric crossed the frozen kill rule.
+- `KILL` — a safety guardrail failed, bounce reached the non-overridable 5% ceiling, or the primary metric crossed the frozen kill rule. A 10% bounce rate requires an all-sending emergency pause and verification audit.
 - `SCALE` — all guardrails passed and the scale rule cleared.
 - `LEARN` — evidence is sufficient but remains between kill and scale.
 

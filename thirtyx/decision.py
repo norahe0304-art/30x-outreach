@@ -1,7 +1,7 @@
 """
 [INPUT]: 依赖 campaign experiment 的结构化阈值与 observation metrics
 [OUTPUT]: 对外提供 decide_experiment() 的 COLLECT/SCALE/KILL/LEARN 决策记录
-[POS]: thirtyx 的确定性学习引擎；安全 guardrail 可先于 minimum sample 立即 KILL
+[POS]: thirtyx 的确定性学习引擎；5% bounce 绝对 KILL、10% emergency stop 不可被 campaign 放宽
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
@@ -17,6 +17,8 @@ OPERATORS = {
 
 LOWER = {"<", "<="}
 HIGHER = {">", ">="}
+ABSOLUTE_BOUNCE_KILL_RATE = 0.05
+EMERGENCY_BOUNCE_STOP_RATE = 0.10
 
 
 def is_number(value):
@@ -80,6 +82,17 @@ def guardrail_failures(metrics, guardrails):
     return failures, missing
 
 
+def absolute_safety_reason(metrics):
+    bounce_rate = metrics.get("bounce_rate")
+    if bounce_rate is None:
+        return ""
+    if bounce_rate >= EMERGENCY_BOUNCE_STOP_RATE:
+        return "emergency bounce ceiling reached; pause all sending and audit verification"
+    if bounce_rate >= ABSOLUTE_BOUNCE_KILL_RATE:
+        return "absolute bounce ceiling reached; stop campaign and audit verification"
+    return ""
+
+
 def validate_identity(campaign, observation):
     for field in ("campaign_id", "sequence_version"):
         if observation.get(field) != campaign.get(field):
@@ -127,6 +140,9 @@ def decide_experiment(campaign, observation):
     validate_observation(observation)
     metrics = observation.get("metrics", {})
     sample_size = observation.get("sample_size", 0)
+    absolute_reason = absolute_safety_reason(metrics)
+    if absolute_reason:
+        return decision_record(campaign, observation, "KILL", absolute_reason, ["bounce_rate"])
     failures, missing = guardrail_failures(metrics, experiment.get("guardrails", []))
     if failures:
         return decision_record(campaign, observation, "KILL", "a safety guardrail failed", failures)
