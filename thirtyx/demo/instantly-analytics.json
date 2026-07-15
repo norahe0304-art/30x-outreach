@@ -1,0 +1,16 @@
+[
+  {
+    "campaign_name": "30x Demo — Signal-led Growth",
+    "campaign_id": "demo-ai-demand-001",
+    "campaign_status": 3,
+    "new_leads_contacted_count": 120,
+    "emails_sent_count": 360,
+    "reply_count_unique": 5,
+    "reply_count_automatic_unique": 2,
+    "total_interested": 4,
+    "bounced_count": 1,
+    "unsubscribed_count": 0,
+    "total_meeting_booked": 1,
+    "total_opportunities": 1
+  }
+]

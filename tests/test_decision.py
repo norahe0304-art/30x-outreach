@@ -42,6 +42,12 @@ class DecisionTests(unittest.TestCase):
         observation["sample_size"] = 99
         self.assertEqual(decide_experiment(self.campaign, observation)["decision"], "COLLECT")
 
+    def test_guardrail_kills_before_minimum_sample(self):
+        observation = copy.deepcopy(self.observation)
+        observation["sample_size"] = 20
+        observation["metrics"]["bounce_rate"] = 0.2
+        self.assertEqual(decide_experiment(self.campaign, observation)["decision"], "KILL")
+
     def test_rejects_mismatched_observation(self):
         observation = copy.deepcopy(self.observation)
         observation["campaign_id"] = "other"

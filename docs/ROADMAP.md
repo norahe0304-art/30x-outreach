@@ -1,10 +1,17 @@
 <!--
-[INPUT]: 依赖当前 v0.2 package 能力、公开安全边界与尚未完成的 adapter 工作
+[INPUT]: 依赖当前 post-v0.2 package 能力、公开安全边界与尚未完成的 adapter 工作
 [OUTPUT]: 对外提供按价值和稳定性排序的产品路线
 [POS]: docs 的公开承诺边界；禁止把未完成能力写成现状
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 -->
 # Roadmap
+
+## Unreleased — Evidence-gated live learning
+
+- Require verified, non-free, non-role email evidence and a sourced buying signal for every executed recipient.
+- Bind campaign identity to an exact audience batch before approval and external writes.
+- Convert Instantly aggregates into deterministic observations and optional hash-chain records.
+- KILL unsafe bounce or compliance guardrails before minimum sample completion.
 
 ## v0.2 — Executable proof
 

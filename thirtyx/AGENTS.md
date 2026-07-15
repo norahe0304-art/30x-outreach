@@ -6,8 +6,10 @@
 __init__.py: 暴露 package version。
 __main__.py: 支持 `python -m thirtyx` 的最小入口。
 cli.py: `30x` 子命令路由，不承载业务规则。
+audience.py: verified email、signal evidence、campaign identity 与 recipient 去重的 execute gate。
 evaluation.py: 十维确定性 sequence 评估与硬阻断。
 approval.py: canonical JSON、SHA-256 manifest 与篡改验证。
+observation.py: 将 Instantly aggregate analytics 转成无 PII experiment observation。
 decision.py: 用结构化阈值计算 COLLECT/SCALE/KILL/LEARN。
 pipeline.py: provider-neutral 的 source→verify→dedupe→stage orchestration。
 contracts/: wheel 内置 JSON Schema 与运行时 contract validation。
@@ -20,6 +22,6 @@ learning/: 去标识、可验证 hash chain 的实验决策记忆。
 
 `demo → evaluation + decision → rendering → cli`
 
-`providers → pipeline`，`decision → learning`；核心层不得依赖具体 SaaS provider。
+`audience → pipeline`，`providers → pipeline`，`observation → decision → learning`；核心层不得依赖具体 SaaS provider。
 
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md

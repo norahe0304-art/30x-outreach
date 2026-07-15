@@ -1,6 +1,6 @@
 """
 [INPUT]: 依赖 thirtyx.pipeline 的 provider-neutral orchestration
-[OUTPUT]: 验证去重、preview 零写入与显式 execute 写入
+[OUTPUT]: 验证去重、preview 零写入、audience-gated execute 与 plugin registry
 [POS]: tests/ 的外部 destination 安全回归测试
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
@@ -16,7 +16,18 @@ class FakeSource:
     info = ProviderInfo("fake", "source", "Offline test source", (), False)
 
     def source(self, _criteria, _volume):
-        return [{"email": "new@example.com"}, {"email": "OLD@example.com"}]
+        verification = {
+            "status": "valid", "provider": "fake", "checked_at": "2026-07-14T10:00:00Z",
+            "is_free_email": False, "is_role_based": False,
+        }
+        signal = {
+            "id": "signal-1", "observation": "A verified buying signal.",
+            "source": "https://example.com/signal", "observed_at": "2026-07-14T09:00:00Z", "verified": True,
+        }
+        return [
+            {"email": "new@example.com", "verification": verification, "signals": [signal]},
+            {"email": "OLD@example.com", "verification": verification, "signals": [signal]},
+        ]
 
 
 class FakeVerifier:
@@ -57,6 +68,16 @@ class PipelineTests(unittest.TestCase):
         registry = ProviderRegistry()
         registry.register(provider)
         self.assertIs(registry.get("source", "fake"), provider)
+
+    def test_execute_rejects_leads_without_signal_proof(self):
+        self.pipeline.source.source = lambda _criteria, _volume: [{
+            "email": "unsafe@example.com",
+            "verification": {"status": "valid", "provider": "fake", "checked_at": "2026-07-14T10:00:00Z"},
+            "signals": [],
+        }]
+        with self.assertRaises(ValueError):
+            self.pipeline.run({}, 1, "demo", execute=True)
+        self.assertEqual(self.destination.uploads, [])
 
 
 if __name__ == "__main__":

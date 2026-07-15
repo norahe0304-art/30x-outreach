@@ -8,6 +8,24 @@
 
 All notable changes are documented here. The project follows semantic versioning after `1.0.0`; `0.x` releases may refine schemas with explicit migration notes.
 
+## Unreleased
+
+### Added
+
+- `audience-batch` contract requiring provider verification, timestamps, non-free/non-role emails, and at least one sourced buying signal per recipient.
+- `30x preflight` to bind a quality-approved campaign to its exact execution audience.
+- `30x observe-instantly` to convert aggregate provider analytics into an observation, deterministic decision, and optional learning-ledger record.
+- Fictional audience and Instantly analytics fixtures covering the complete offline proof.
+
+### Changed
+
+- Provider destinations, the legacy Instantly uploader, and the SMTP sender now fail closed before external writes when audience proof is missing.
+- Safety guardrail failures return `KILL` immediately, even before the preregistered minimum sample is reached.
+
+### Security
+
+- Approval alone no longer authorizes sending; the approved recipient set must exactly match a verified, signal-backed audience batch.
+
 ## 0.2.0 — 2026-07-14
 
 ### Added

@@ -1,6 +1,6 @@
 """
 [INPUT]: 依赖 scripts/lead-pipeline.py 的 preview upload 与 evidence-backed personalization
-[OUTPUT]: 验证默认不产生 Instantly 写入、无已验证来源时不生成文案
+[OUTPUT]: 验证默认不产生 Instantly 写入、无 verification/signal proof 时 execute 失败
 [POS]: tests/ 的 lead staging 安全回归测试
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
@@ -30,8 +30,17 @@ class LeadPipelineSafetyTests(unittest.TestCase):
 
     def test_personalization_requires_verified_source(self):
         self.assertEqual(LEAD_PIPELINE.generate_personalization({"title": "VP Growth"}), "")
-        signal = {"verified": True, "source": "https://northstar.example", "observation": "Hiring a lifecycle lead."}
-        self.assertEqual(LEAD_PIPELINE.generate_personalization({"personalization_signal": signal}), signal["observation"])
+        signal = {
+            "id": "signal-1", "verified": True, "source": "https://northstar.example",
+            "observation": "Hiring a lifecycle lead.", "observed_at": "2026-07-14T10:00:00Z",
+        }
+        self.assertEqual(LEAD_PIPELINE.generate_personalization({"signals": [signal]}), signal["observation"])
+
+    def test_execute_rejects_unverified_or_unsignaled_leads(self):
+        leads = [{"email": "unsafe@northstar.example"}]
+        with patch.object(LEAD_PIPELINE, "request_with_retry") as request, self.assertRaises(ValueError):
+            LEAD_PIPELINE.upload_to_instantly("unused", leads, "demo", execute=True)
+        request.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -2,9 +2,9 @@
 """
 Human-gated outbound sender with immutable approvals and privacy-safe history.
 
-[INPUT]: 依赖 approved payload、thirtyx.approval manifest、环境变量发送凭据与 config_loader.py
+[INPUT]: 依赖 approved payload、audience batch、approval manifest、环境变量发送凭据与 config_loader.py
 [OUTPUT]: 对外提供默认 preview、显式 --execute 发送、限额与去重日志
-[POS]: scripts/ 的最终外部写边界；不验证内容哈希绝不发送
+[POS]: scripts/ 的最终外部写边界；audience 或内容哈希不匹配绝不发送
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 from thirtyx.approval import load_json, verify_manifest
+from thirtyx.audience import preflight_audience
 from config_loader import get_sending_config, load_config, write_output
 
 
@@ -126,10 +127,28 @@ def require_live_authorization(payload, manifest_path):
     return verify_manifest(payload, manifest)
 
 
+def require_execution_audience(payload, audience_path):
+    if not audience_path:
+        return False, ["--audience-batch is required with --execute"]
+    try:
+        audience = preflight_audience(load_json(audience_path), payload.get("campaign_id", ""))
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        return False, [f"audience batch is invalid: {error}"]
+    approved_emails = [str(item.get("email", "")).strip().lower() for item in prospects_from_payload(payload)]
+    if any("@" not in email for email in approved_emails) or len(approved_emails) != len(set(approved_emails)):
+        return False, ["approved payload contains invalid or duplicate recipients"]
+    approved = set(approved_emails)
+    staged = {lead["email"].strip().lower() for lead in audience["leads"]}
+    if approved != staged:
+        return False, ["audience recipients do not match approved payload"]
+    return True, []
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description="Preview approved outreach; execute only with a matching approval manifest")
     parser.add_argument("--execute", action="store_true", help="Perform external sends; preview is the default")
     parser.add_argument("--approval-manifest", help="Manifest created by 30x approve")
+    parser.add_argument("--audience-batch", help="Verified, signal-backed audience accepted by 30x preflight")
     parser.add_argument("--max", type=int, default=DEFAULT_MAX_PER_DAY)
     parser.add_argument("--approved-file", default=DEFAULT_APPROVED_FILE)
     parser.add_argument("--history-file", default=DEFAULT_HISTORY_FILE)
@@ -147,9 +166,10 @@ def load_approved_payload(path):
 def enforce_authorization(args, payload):
     if not args.execute:
         return
-    valid, errors = require_live_authorization(payload, args.approval_manifest)
-    if not valid:
-        raise ValueError("; ".join(errors))
+    approval_valid, approval_errors = require_live_authorization(payload, args.approval_manifest)
+    audience_valid, audience_errors = require_execution_audience(payload, args.audience_batch)
+    if not approval_valid or not audience_valid:
+        raise ValueError("; ".join([*approval_errors, *audience_errors]))
 
 
 def enforce_credentials(execute, settings):

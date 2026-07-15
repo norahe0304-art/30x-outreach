@@ -13,16 +13,19 @@
 ```mermaid
 flowchart LR
     A[Verified signal] --> B[Campaign spec]
-    B --> C[10-lens gate]
-    C --> D[Exact payload]
-    D --> E[Human approval manifest]
-    E --> F{Explicit execute?}
-    F -- no --> G[Preview]
-    F -- yes --> H[Provider write]
-    B --> I[Aggregate observation]
-    I --> J[Deterministic decision]
-    J --> K[Hash-chain learning ledger]
-    K --> B
+    A --> C[Verified audience batch]
+    B --> D[10-lens gate]
+    C --> E[Execution preflight]
+    D --> E
+    E --> F[Exact payload approval]
+    F --> G{Explicit execute?}
+    G -- no --> H[Preview]
+    G -- yes --> I[Provider write]
+    I --> J[Aggregate provider analytics]
+    J --> K[Experiment observation]
+    K --> L[COLLECT / SCALE / KILL / LEARN]
+    L --> M[Hash-chain learning ledger]
+    M --> B
 ```
 
 ## Trust boundaries
@@ -30,15 +33,18 @@ flowchart LR
 | Boundary | Rule | Failure mode |
 |---|---|---|
 | Evidence | A claim needs an observation, source, and `verified: true` | Omit personalization |
+| Audience | Every recipient needs provider verification and at least one sourced, timestamped signal | Reject execution |
 | Quality | Ten transparent lenses plus hard blockers | Return `REVISE` |
 | Approval | SHA-256 binds reviewer to exact JSON and recipient count | Reject changed payload |
 | Execution | Preview by default; writes require `--execute`; SMTP journals before delivery | Perform no write or stop on unresolved pending delivery |
-| Decision | Thresholds are frozen in the campaign spec | Return one deterministic state |
+| Decision | Thresholds are frozen; safety guardrails may KILL before minimum sample | Return one deterministic state |
 | Memory | Aggregate records form a SHA-256 chain | Report the first broken record |
 
 ## Core modules
 
 - `thirtyx/evaluation.py` performs deterministic copy and experiment checks.
+- `thirtyx/audience.py` rejects unverified, unsignaled, duplicate, or campaign-mismatched recipients.
+- `thirtyx/observation.py` maps Instantly aggregate counts into provider-neutral rates without recipient identity.
 - `thirtyx/decision.py` maps aggregate observations to `COLLECT`, `SCALE`, `KILL`, or `LEARN`.
 - `thirtyx/approval.py` canonicalizes payloads and verifies immutable approval manifests.
 - `thirtyx/pipeline.py` orchestrates source, verify, dedupe, and destination protocols.
@@ -49,7 +55,7 @@ flowchart LR
 
 ## Contracts
 
-Every stage has a wheel-packaged JSON Schema under `thirtyx/contracts/`. Campaigns and observations are inputs. Decisions are computed outputs. Approval and learning records are append-only evidence. Public demos use reserved `.example` addresses and simulated aggregate metrics.
+Every stage has a wheel-packaged JSON Schema under `thirtyx/contracts/`. Campaigns, audiences, and observations are inputs. Decisions are computed outputs. Approval and learning records are append-only evidence. Public demos use reserved `.example` addresses and simulated aggregate metrics.
 
 ## Dependency rule
 

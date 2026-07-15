@@ -14,6 +14,7 @@ from jsonschema.exceptions import ValidationError
 
 SCHEMA_NAMES = (
     "campaign-spec.schema.json",
+    "audience-batch.schema.json",
     "experiment-observation.schema.json",
     "decision-record.schema.json",
     "approval-manifest.schema.json",

@@ -5,7 +5,7 @@ Lead Pipeline: Apollo → LeadMagic → Dedupe → Instantly
 End-to-end lead sourcing, verification, deduplication, and upload pipeline.
 
 [INPUT]: 依赖 config_loader.py 的 load_config/get_api_key/load_icp_profile/write_output
-[OUTPUT]: 对外提供默认 preview pipeline、显式 --execute 上传与去标识运行报告
+[OUTPUT]: 对外提供默认 preview pipeline、verified + signal-gated execute 与去标识运行报告
 [POS]: scripts/ 的核心执行脚本，被 SKILL.md Step 4 调用
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 
@@ -29,7 +29,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     import requests
@@ -38,6 +38,7 @@ except ImportError:
     sys.exit(1)
 
 from config_loader import SKILL_ROOT, get_api_key, load_config, load_icp_profile, write_output
+from thirtyx.audience import assert_execution_ready
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +202,13 @@ def verify_with_leadmagic(api_key, leads):
             if status == "valid":
                 lead["is_free_email"] = data.get("is_free_email", False)
                 lead["is_role_based"] = data.get("is_role_based", False)
+                lead["verification"] = {
+                    "status": "valid",
+                    "provider": "leadmagic",
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
+                    "is_free_email": lead["is_free_email"],
+                    "is_role_based": lead["is_role_based"],
+                }
                 valid_leads.append(lead)
             elif status == "invalid":
                 invalid_count += 1
@@ -343,12 +351,14 @@ def deduplicate(leads, api_key, exclude_file=None):
 # ---------------------------------------------------------------------------
 
 def generate_personalization(lead):
-    signal = lead.get("personalization_signal")
+    signals = lead.get("signals", [])
+    signal = signals[0] if isinstance(signals, list) and signals else None
     if not isinstance(signal, dict) or signal.get("verified") is not True:
         return ""
     observation = str(signal.get("observation", "")).strip()
     source = str(signal.get("source", "")).strip()
-    return observation if observation and source else ""
+    observed_at = str(signal.get("observed_at", "")).strip()
+    return observation if observation and source and observed_at else ""
 
 
 def upload_to_instantly(api_key, leads, campaign_id, execute=False):
@@ -360,6 +370,8 @@ def upload_to_instantly(api_key, leads, campaign_id, execute=False):
     if not execute:
         print("  🔎 PREVIEW — no external write; pass --execute to upload")
         return {"planned": len(leads), "uploaded": 0, "failed": 0, "executed": False}
+
+    assert_execution_ready(leads, campaign_id)
 
     url = "https://api.instantly.ai/api/v2/leads"
     headers = {

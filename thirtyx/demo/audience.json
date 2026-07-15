@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "campaign_id": "demo-ai-demand-001",
+  "generated_at": "2026-07-14T11:30:00Z",
+  "leads": [
+    {
+      "email": "alex@northstar.example",
+      "first_name": "Alex",
+      "last_name": "Rivera",
+      "company_name": "Northstar AI",
+      "verification": {
+        "status": "valid",
+        "provider": "demo-verifier",
+        "checked_at": "2026-07-14T11:00:00Z",
+        "is_free_email": false,
+        "is_role_based": false
+      },
+      "signals": [
+        {
+          "id": "signal-001",
+          "observation": "Northstar AI is hiring its first lifecycle marketer.",
+          "source": "https://northstar.example/careers/lifecycle-marketer",
+          "observed_at": "2026-07-13T18:00:00Z",
+          "verified": true
+        }
+      ]
+    }
+  ]
+}

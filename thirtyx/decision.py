@@ -1,7 +1,7 @@
 """
 [INPUT]: 依赖 campaign experiment 的结构化阈值与 observation metrics
 [OUTPUT]: 对外提供 decide_experiment() 的 COLLECT/SCALE/KILL/LEARN 决策记录
-[POS]: thirtyx 的确定性学习引擎；冻结阈值后才解释结果
+[POS]: thirtyx 的确定性学习引擎；安全 guardrail 可先于 minimum sample 立即 KILL
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
@@ -128,10 +128,10 @@ def decide_experiment(campaign, observation):
     metrics = observation.get("metrics", {})
     sample_size = observation.get("sample_size", 0)
     failures, missing = guardrail_failures(metrics, experiment.get("guardrails", []))
-    if sample_size < experiment["minimum_sample_size"] or missing:
-        return decision_record(campaign, observation, "COLLECT", "minimum evidence not reached", failures, missing)
     if failures:
         return decision_record(campaign, observation, "KILL", "a safety guardrail failed", failures)
+    if sample_size < experiment["minimum_sample_size"] or missing:
+        return decision_record(campaign, observation, "COLLECT", "minimum evidence not reached", missing=missing)
     primary_value = metrics.get(experiment["primary_metric"])
     if primary_value is None:
         return decision_record(campaign, observation, "COLLECT", "primary metric is missing", missing=[experiment["primary_metric"]])

@@ -1,6 +1,6 @@
 """
-[INPUT]: 依赖 contracts、评估、决策、审批、learning、provider 与 rendering API
-[OUTPUT]: 对外提供 demo/evaluate/decide/approve/verify/record/history/providers/doctor CLI
+[INPUT]: 依赖 contracts、audience、评估、观测、决策、审批、learning、provider 与 rendering API
+[OUTPUT]: 对外提供 demo/preflight/evaluate/observe/decide/approve/verify/record/history/providers/doctor CLI
 [POS]: thirtyx 的产品入口；只路由命令，不复制业务规则
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
@@ -13,10 +13,12 @@ from importlib import resources
 
 from . import __version__
 from .approval import create_manifest, load_json, verify_manifest, write_json
+from .audience import preflight_audience
 from .contracts import validate_instance
 from .decision import decide_experiment
 from .evaluation import evaluate_sequence
 from .learning import append_record, ledger_head, load_records, verify_records
+from .observation import observation_from_instantly
 from .providers import default_registry
 from .rendering import render_terminal, terminal_text, write_html
 
@@ -40,6 +42,13 @@ def add_evaluate_parser(commands):
     parser.set_defaults(handler=command_evaluate)
 
 
+def add_preflight_parser(commands):
+    parser = commands.add_parser("preflight", help="Require a verified, signal-backed audience before execution")
+    parser.add_argument("campaign")
+    parser.add_argument("audience")
+    parser.set_defaults(handler=command_preflight)
+
+
 def add_decide_parser(commands):
     parser = commands.add_parser("decide", help="Apply frozen SCALE/KILL/LEARN thresholds")
     parser.add_argument("campaign")
@@ -48,6 +57,16 @@ def add_decide_parser(commands):
     parser.add_argument("--html", help="Optional shareable HTML report path")
     parser.add_argument("--no-color", action="store_true")
     parser.set_defaults(handler=command_decide)
+
+
+def add_observe_parser(commands):
+    parser = commands.add_parser("observe-instantly", help="Convert Instantly aggregates into a frozen decision")
+    parser.add_argument("campaign")
+    parser.add_argument("analytics")
+    parser.add_argument("--observed-at", default="")
+    parser.add_argument("--output", required=True, help="Experiment observation JSON path")
+    parser.add_argument("--ledger", help="Optional learning ledger path")
+    parser.set_defaults(handler=command_observe_instantly)
 
 
 def add_approval_parsers(commands):
@@ -84,7 +103,9 @@ def build_parser():
     commands = parser.add_subparsers(dest="command", required=True)
     add_demo_parser(commands)
     add_evaluate_parser(commands)
+    add_preflight_parser(commands)
     add_decide_parser(commands)
+    add_observe_parser(commands)
     add_approval_parsers(commands)
     add_learning_parsers(commands)
     commands.add_parser("providers", help="List built-in and plugin providers").set_defaults(handler=command_providers)
@@ -115,6 +136,16 @@ def command_evaluate(args):
     return 0 if report["decision"] == "READY_FOR_HUMAN_REVIEW" else 1
 
 
+def command_preflight(args):
+    campaign = validate_instance(load_json(args.campaign), "campaign-spec.schema.json")
+    evaluation = evaluate_sequence(campaign)
+    if evaluation["decision"] != "READY_FOR_HUMAN_REVIEW":
+        raise ValueError("campaign is not ready for human review")
+    audience = preflight_audience(load_json(args.audience), campaign["campaign_id"])
+    print(f"READY · {len(audience['leads'])} verified, signal-backed recipients · {campaign['campaign_id']}")
+    return 0
+
+
 def command_decide(args):
     campaign = validate_instance(load_json(args.campaign), "campaign-spec.schema.json")
     observation = validate_instance(load_json(args.observation), "experiment-observation.schema.json")
@@ -126,6 +157,21 @@ def command_decide(args):
         write_json(args.output, decision)
     if args.html:
         write_html(args.html, campaign, evaluation, decision)
+    return 0
+
+
+def command_observe_instantly(args):
+    campaign = validate_instance(load_json(args.campaign), "campaign-spec.schema.json")
+    observation = observation_from_instantly(campaign, load_json(args.analytics), args.observed_at or None)
+    validate_instance(observation, "experiment-observation.schema.json")
+    decision = decide_experiment(campaign, observation)
+    validate_instance(decision, "decision-record.schema.json")
+    write_json(args.output, observation)
+    if args.ledger:
+        record = append_record(args.ledger, campaign, observation, decision)
+        print(f"{decision['decision']} · recorded {record['record_sha256']}")
+    else:
+        print(f"{decision['decision']} · observation → {args.output}")
     return 0
 
 

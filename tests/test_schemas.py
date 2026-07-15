@@ -1,5 +1,5 @@
 """
-[INPUT]: 依赖 wheel 内置五份 JSON Schema、demo resources 与核心 API
+[INPUT]: 依赖 wheel 内置六份 JSON Schema、demo resources 与核心 API
 [OUTPUT]: 验证 campaign、observation、decision、approval、learning 跨阶段契约
 [POS]: tests/ 的安装后 schema 同构回归测试
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md

@@ -1,11 +1,13 @@
 """
-[INPUT]: 依赖 providers.base 的 source、verifier、destination Protocol
+[INPUT]: 依赖 providers.base Protocol 与 audience execution gate
 [OUTPUT]: 对外提供 DemandPipeline 与去标识 PipelineResult
-[POS]: thirtyx 的 provider-neutral orchestration；execute 是唯一 destination 写入门
+[POS]: thirtyx 的 provider-neutral orchestration；execute + audience proof 是唯一 destination 写入门
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
 from dataclasses import asdict, dataclass
+
+from .audience import assert_execution_ready
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,8 @@ class DemandPipeline:
         sourced = self.source.source(criteria, volume)
         verified = self.verifier.verify(sourced)
         ready = net_new_leads(verified, self.destination.existing_emails())
+        if execute and ready:
+            assert_execution_ready(ready, campaign_id)
         uploaded = self.destination.upload(ready, campaign_id) if execute and ready else 0
         return PipelineResult(
             sourced=len(sourced), verified=len(verified),

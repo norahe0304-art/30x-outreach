@@ -2,7 +2,7 @@
 Python 3.9+ + JSON Schema + requests + unittest
 
 <directory>
-thirtyx/ - 可安装 package：CLI、评估、决策、审批、provider、渲染与 learning ledger
+thirtyx/ - 可安装 package：CLI、audience gate、评估、观测、决策、审批、provider、渲染与 learning ledger
 scripts/ - 旧式 SaaS adapter 与兼容 CLI；所有外部写入默认关闭
 docs/ - 架构、provider、roadmap 与 changelog
 assets/ - README 与发布使用的真实离线 demo 视觉
@@ -38,12 +38,13 @@ LICENSE - MIT 许可证
 
 `demo → evaluation + decision → rendering → cli`
 
-`providers → pipeline`；`approval → live execution`；`decision → learning ledger`
+`audience → pipeline + live execution`；`providers → pipeline`；`observation → decision → learning ledger`；`approval → live execution`
 
 `references + thirtyx/contracts → thirtyx core → scripts adapters → ignored local outputs`
 
 ## 变更日志
 
+- 2026-07-15: 新增 verified + signal-backed audience contract、全外部写入 preflight 与 Instantly aggregate → decision → ledger 闭环；安全 guardrail 可在小样本阶段立即 KILL。
 - 2026-07-14: 建立可安装 `30x` CLI、结构化四态决策、provider contract、离线 HTML proof 与 hash-chain learning ledger。
 - 2026-07-14: 引入十维确定性评估、预注册实验、不可变审批、默认 preview、隐私安全历史、schemas、tests 与 CI；移除人格模拟评审和明文凭据。
 

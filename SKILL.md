@@ -127,6 +127,8 @@ The pipeline reads Apollo, verifies through LeadMagic, deduplicates against Inst
 
 Review targeting parameters, counts, verification loss, exclusions, and the staged lead file. Only then may the operator authorize the same command with `--execute`.
 
+Apollo identity and title fields are not buying signals. Before any execution, convert the reviewed recipients into `thirtyx/contracts/audience-batch.schema.json`. Each recipient needs provider verification and at least one sourced, timestamped, verified observation.
+
 ## Step 6: Preregister the campaign
 
 Create a campaign spec matching `thirtyx/contracts/campaign-spec.schema.json` with:
@@ -156,6 +158,14 @@ The ten lenses are targeting context, subject line, opening, relevance/evidence,
 
 ## Step 8: Bind human approval to the exact payload
 
+Bind the campaign to its execution audience first:
+
+```bash
+30x preflight \
+  data/campaign-spec.json \
+  data/audience-batch.json
+```
+
 First preview the exact payload:
 
 ```bash
@@ -182,6 +192,7 @@ Do not modify the payload after this command. Any change must invalidate the app
 python3 scripts/cold-outbound-sender.py \
   --approved-file data/cold-outbound-approved.json \
   --approval-manifest data/campaign-approval.json \
+  --audience-batch data/audience-batch.json \
   --execute
 ```
 
@@ -189,7 +200,17 @@ The sender must fail closed on manifest mismatch, missing credentials, suspiciou
 
 ## Step 10: Close the learning loop
 
-Once the preregistered minimum sample is reached, write aggregate metrics matching `thirtyx/contracts/experiment-observation.schema.json`, then compute the decision from the frozen campaign:
+Export Instantly aggregate analytics with the exact campaign ID, then convert it into the provider-neutral observation and optional ledger record:
+
+```bash
+30x observe-instantly \
+  data/campaign-spec.json \
+  data/instantly-analytics.json \
+  --output data/experiment-observation.json \
+  --ledger .30x/learning.jsonl
+```
+
+Safety guardrails such as bounce rate can KILL immediately; they do not wait for the minimum sample. For other outcomes, compute or inspect the decision from the frozen campaign:
 
 ```bash
 30x decide \
@@ -218,6 +239,7 @@ Once the preregistered minimum sample is reached, write aggregate metrics matchi
 | `references/measurement-framework.md` | Preregistration and decision semantics |
 | `references/instantly-rules.md` | Platform variables and deliverability |
 | `thirtyx/contracts/campaign-spec.schema.json` | Campaign contract |
+| `thirtyx/contracts/audience-batch.schema.json` | Verified, signal-backed execution audience |
 | `thirtyx/contracts/approval-manifest.schema.json` | Approval contract |
 | `thirtyx/contracts/experiment-observation.schema.json` | Aggregate observation contract |
 | `thirtyx/contracts/decision-record.schema.json` | Deterministic decision contract |

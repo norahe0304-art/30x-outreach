@@ -43,12 +43,12 @@ The demo proves the workflow, not production campaign performance. Its aggregate
 
 ```mermaid
 flowchart LR
-    A[Verified market signal] --> B[Campaign hypothesis]
+    A[Verified market signal] --> B[Campaign + audience contracts]
     B --> C[Sequence + frozen thresholds]
-    C --> D[Deterministic quality gate]
+    C --> D[Quality + execution preflight]
     D --> E[Exact-payload human approval]
     E --> F[Preview or explicit execution]
-    F --> G[Aggregate observation]
+    F --> G[Provider aggregate analytics]
     G --> H[COLLECT / SCALE / KILL / LEARN]
     H --> I[Hash-chained memory]
     I --> B
@@ -61,6 +61,7 @@ The durable artifact is not just copy. It is the chain of evidence connecting au
 | Risk | Executable control |
 |---|---|
 | Invented personalization | Claims require a sourced `verified: true` evidence object |
+| False “verified” leads | Every executed recipient needs provider verification plus a sourced, timestamped buying signal |
 | Vague “AI quality” | Ten named, inspectable lenses plus hard blockers |
 | Approval drift | Reviewer, recipient count, campaign, and exact JSON are SHA-256 bound |
 | Accidental sending | Preview is default; destination writes require `--execute` |
@@ -76,7 +77,9 @@ AI may propose audiences, hypotheses, and copy. It cannot invent evidence, appro
 |---|---|
 | `30x demo` | Run the complete offline proof and render HTML |
 | `30x evaluate CAMPAIGN` | Apply the deterministic ten-lens quality gate |
+| `30x preflight CAMPAIGN AUDIENCE` | Reject unverified, unsignaled, duplicate, or mismatched recipients |
 | `30x decide CAMPAIGN OBSERVATION` | Compute a frozen four-state decision |
+| `30x observe-instantly CAMPAIGN ANALYTICS --output OBSERVATION` | Convert Instantly aggregates into a decision-ready observation |
 | `30x approve PAYLOAD --by ID --output MANIFEST` | Bind human approval to exact content |
 | `30x verify PAYLOAD MANIFEST` | Fail if approved content changed |
 | `30x record CAMPAIGN OBSERVATION` | Append an aggregate decision to the learning ledger |
@@ -92,6 +95,7 @@ Run `30x COMMAND --help` for exact options.
 Start from the schemas and package demo:
 
 - [`campaign-spec.schema.json`](thirtyx/contracts/campaign-spec.schema.json) freezes audience, evidence, sequence, and decision rules.
+- [`audience-batch.schema.json`](thirtyx/contracts/audience-batch.schema.json) proves email verification and recipient-level buying signals.
 - [`experiment-observation.schema.json`](thirtyx/contracts/experiment-observation.schema.json) contains aggregate metrics only.
 - [`decision-record.schema.json`](thirtyx/contracts/decision-record.schema.json) captures the deterministic result.
 - [`approval-manifest.schema.json`](thirtyx/contracts/approval-manifest.schema.json) binds human review to content.
@@ -99,7 +103,12 @@ Start from the schemas and package demo:
 
 ```bash
 30x evaluate campaign.json --output evaluation.json
+30x preflight campaign.json audience.json
 30x decide campaign.json observation.json --output decision.json --html report.html
+
+30x observe-instantly campaign.json instantly-analytics.json \
+  --output observation.json \
+  --ledger .30x/learning.jsonl
 
 30x approve approved-payload.json \
   --by YOUR_IDENTITY \
@@ -134,7 +143,7 @@ The learning ledger stores campaign-level hypotheses, aggregate observations, an
 
 ### External writes stay explicit
 
-The provider-neutral pipeline only calls a destination when `execute=True`. The live sender also fails closed on a missing or mismatched approval, missing credentials, suspicious content, daily-limit exhaustion, or duplicate recipient. Before crossing SMTP, it persists a `pending` journal entry; a crash at the delivery boundary therefore stops a later retry instead of risking a duplicate message.
+The provider-neutral pipeline only calls a destination when `execute=True` and every recipient has valid verification plus a sourced, timestamped buying signal. The live sender also requires the same audience batch to match the exact approved recipient set. Before crossing SMTP, it persists a `pending` journal entry; a crash at the delivery boundary therefore stops a later retry instead of risking a duplicate message.
 
 ## Live integrations
 
@@ -151,7 +160,7 @@ cp config.example.json config.json
 30x doctor
 ```
 
-Credentials are environment-only. Run the lead pipeline without `--execute`, inspect the staged audience and counts, then opt into the same reviewed command with `--execute`.
+Credentials are environment-only. Run the lead pipeline without `--execute` and inspect the staged audience. Legacy Apollo results do not contain buying-signal evidence by themselves, so live execution remains blocked until each recipient is enriched into the `audience-batch` contract and passes `30x preflight`.
 
 ```bash
 python scripts/lead-pipeline.py \
