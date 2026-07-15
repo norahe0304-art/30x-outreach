@@ -5,11 +5,10 @@ instantly-audit.py — Instantly v2 基础设施审计
 [INPUT]: 依赖 config_loader.py 的 load_config/get_api_key/write_output
 [OUTPUT]: 对外提供 Instantly 账号/Campaign/Warmup 审计报告
 [POS]: scripts/ 的审计脚本，被 SKILL.md Step 3 调用
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 
 Usage:
-    python3 instantly-audit.py                    # 从 config.json 读 key
-    python3 instantly-audit.py --api-key YOUR_KEY # 直接传 key
+    INSTANTLY_API_KEY=... python3 instantly-audit.py
     python3 instantly-audit.py --json             # 原始 JSON 输出
 
 Instantly v2 API docs: https://developer.instantly.ai/
@@ -17,7 +16,6 @@ Instantly v2 API docs: https://developer.instantly.ai/
 
 import argparse
 import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -28,12 +26,7 @@ except ImportError:
     print("ERROR: 'requests' not installed. Run: pip install requests")
     sys.exit(1)
 
-try:
-    from config_loader import load_config, get_api_key, write_output
-except ImportError:
-    def load_config(): return {}
-    def get_api_key(c, s): return ""
-    def write_output(m, d, **kw): pass
+from config_loader import get_api_key, load_config, write_output
 
 BASE_URL = "https://api.instantly.ai/api/v2"
 
@@ -203,7 +196,7 @@ def generate_report(campaigns: list, analytics: dict, accounts: list, warmup_sco
     lines = []
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    lines.append(f"# Instantly Audit Report")
+    lines.append("# Instantly Audit Report")
     lines.append(f"Generated: {now}\n")
 
     # ── Account Inventory ──
@@ -340,27 +333,19 @@ def generate_report(campaigns: list, analytics: dict, accounts: list, warmup_sco
 
 def main():
     parser = argparse.ArgumentParser(description="Instantly v2 API Audit Tool")
-    parser.add_argument("--api-key", help="Instantly API key (or set INSTANTLY_API_KEY env var)")
     parser.add_argument("--output", help="Write report to this file (default: print to stdout)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON instead of markdown report")
     args = parser.parse_args()
 
     config = load_config()
-    api_key = args.api_key or get_api_key(config, "instantly") or os.environ.get("INSTANTLY_API_KEY")
+    api_key = get_api_key(config, "instantly")
     if not api_key:
-        try:
-            if sys.stdin.isatty():
-                api_key = input("Instantly API key: ").strip()
-        except EOFError:
-            pass
-    if not api_key:
-        print("Error: API key required. Run this script interactively to enter it, or set it in config.json, "
-              "the INSTANTLY_API_KEY env var, or via --api-key.")
+        print("Error: INSTANTLY_API_KEY environment variable is required.")
         sys.exit(1)
 
     headers = get_headers(api_key)
 
-    print(f"\n🔍 Starting Instantly audit...\n")
+    print("\n🔍 Starting Instantly audit...\n")
 
     campaigns = fetch_campaigns(headers)
     campaign_ids = [c.get("id") for c in campaigns if c.get("id")]

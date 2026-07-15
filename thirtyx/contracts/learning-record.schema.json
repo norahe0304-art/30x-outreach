@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://30x.example/schemas/learning-record.schema.json",
+  "title": "30x Outreach Learning Record",
+  "type": "object",
+  "required": [
+    "schema_version", "recorded_at", "previous_sha256", "record_sha256",
+    "campaign_id", "sequence_version", "audience", "hypothesis", "variable",
+    "observation", "decision"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "previous_sha256": {"type": "string", "pattern": "^$|^[a-f0-9]{64}$"},
+    "record_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "campaign_id": {"type": "string", "minLength": 1},
+    "sequence_version": {"type": "string", "minLength": 1},
+    "audience": {"type": "string", "minLength": 1},
+    "hypothesis": {"type": "string", "minLength": 1},
+    "variable": {"type": "string", "minLength": 1},
+    "observation": {"type": "object"},
+    "decision": {"type": "object"}
+  },
+  "additionalProperties": false
+}

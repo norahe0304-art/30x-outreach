@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "campaign_id": "demo-ai-demand-001",
+  "sequence_version": "v1",
+  "audience": "Heads of Growth at US B2B AI startups with 20–100 employees",
+  "anti_icp": ["consumer-only companies", "companies without a verified work email"],
+  "buyer_problem": "Small growth teams lose campaign learning between research, copy, execution, and reporting.",
+  "value_proposition": "Turn verified market signals into reviewable campaign briefs and reusable experiment records.",
+  "evidence": [
+    {
+      "id": "signal-001",
+      "observation": "Northstar AI is hiring its first lifecycle marketer.",
+      "source": "https://northstar.example/careers/lifecycle-marketer",
+      "verified": true
+    }
+  ],
+  "experiment": {
+    "hypothesis": "A signal-led message about preserving campaign learning will earn more positive replies than a generic automation pitch.",
+    "variable": "opening frame: verified hiring signal versus generic automation claim",
+    "primary_metric": "positive_reply_rate",
+    "guardrails": [
+      {"metric": "bounce_rate", "operator": "<", "value": 0.02},
+      {"metric": "unsubscribe_rate", "operator": "<", "value": 0.01}
+    ],
+    "minimum_sample_size": 100,
+    "decision_thresholds": {
+      "scale": {"operator": ">=", "value": 0.03},
+      "kill": {"operator": "<", "value": 0.01},
+      "learn": {"otherwise": true}
+    }
+  },
+  "steps": [
+    {
+      "day": 0,
+      "subject": "your first lifecycle hire",
+      "body": "Teams making their first lifecycle hire often need campaign learning to survive beyond one person's notes. Northstar AI's open role made me wonder whether a reviewable signal-to-experiment workflow would be useful.",
+      "cta": "Worth sharing the one-page workflow?",
+      "evidence_ids": ["signal-001"]
+    },
+    {
+      "day": 3,
+      "subject": "the experiment record",
+      "body": "The useful part is not another copy generator. It is a versioned record connecting each signal, message decision, guardrail, and result so the next wave starts smarter.",
+      "cta": "Should I send the example?",
+      "evidence_ids": []
+    },
+    {
+      "day": 8,
+      "subject": "close the loop",
+      "body": "Closing the loop here. If preserving the reasoning behind growth experiments becomes timely, the open example will still be available.",
+      "cta": "",
+      "evidence_ids": []
+    }
+  ]
+}

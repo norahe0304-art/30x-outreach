@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "demo": true,
+  "campaign_id": "demo-ai-demand-001",
+  "sequence_version": "v1",
+  "observed_at": "2026-07-14T12:00:00Z",
+  "sample_size": 120,
+  "metrics": {
+    "positive_reply_rate": 0.034,
+    "bounce_rate": 0.01,
+    "unsubscribe_rate": 0.002
+  },
+  "notes": "Simulated values used only to demonstrate the deterministic decision engine."
+}

@@ -86,6 +86,6 @@
     "funding_date": true,
     "tech_stack_crm": true,
     "days_in_role": true,
-    "note": "These 3 fields have highest conversion lift for trigger-event targeting"
+    "note": "Optional enrichment candidates; validate relevance for each campaign before use"
   }
 }

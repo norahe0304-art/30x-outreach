@@ -1,0 +1,31 @@
+# [INPUT]: 依赖 pyproject package、thirtyx demo/contracts 与 tests
+# [OUTPUT]: 对外提供 Python 3.9/3.11/3.12 离线安全和安装验证
+# [POS]: workflows 的主质量门；不读取 secrets、不执行外部写入
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-safety:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - run: python -m compileall -q thirtyx scripts tests
+      - run: python -m unittest discover -s tests -v
+      - run: 30x demo --no-color --output /tmp/30x-demo-report.html
+      - run: 30x approve thirtyx/demo/approved-payload.json --by ci --campaign-id demo-ai-demand-001 --output /tmp/approval.json
+      - run: 30x verify thirtyx/demo/approved-payload.json /tmp/approval.json
+      - run: python -m pip wheel . --no-deps --wheel-dir /tmp/30x-wheel

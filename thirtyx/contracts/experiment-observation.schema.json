@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://30x.example/schemas/experiment-observation.schema.json",
+  "title": "30x Outreach Experiment Observation",
+  "type": "object",
+  "required": ["schema_version", "campaign_id", "sequence_version", "observed_at", "sample_size", "metrics"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "demo": {"type": "boolean"},
+    "campaign_id": {"type": "string", "minLength": 1},
+    "sequence_version": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "sample_size": {"type": "integer", "minimum": 0},
+    "metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "number"}
+    },
+    "notes": {"type": "string"}
+  },
+  "additionalProperties": false
+}

@@ -5,7 +5,7 @@ Cross-Signal Detector — 跨源信号交叉检测
 [INPUT]: 依赖 config_loader.py，扫描 data/output/ 下所有模块输出
 [OUTPUT]: 对外提供跨信号检测报告，输出到 data/intel/signals/
 [POS]: scripts/ 的情报脚本，被 SKILL.md Step 5 调用
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 
 Usage:
     python3 cross-signal-detector.py                      # 扫描 data/output/
@@ -20,14 +20,8 @@ import re
 import glob
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from pathlib import Path
 
-try:
-    from config_loader import load_config, write_output, SKILL_ROOT
-except ImportError:
-    SKILL_ROOT = Path(__file__).resolve().parent.parent
-    def load_config(): return {}
-    def write_output(m, d, **kw): pass
+from config_loader import SKILL_ROOT
 
 
 # Words to exclude from company name extraction (common English words that look like names)

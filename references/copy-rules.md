@@ -2,6 +2,8 @@
 
 Rules for writing and evaluating cold email copy. Apply to every step in every sequence.
 
+> [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+
 ---
 
 ## First Sentence Rules
@@ -14,11 +16,11 @@ Rules for writing and evaluating cold email copy. Apply to every step in every s
 - "Hope this finds you well" or any version of it
 - "My name is..." (save for follow-ups if needed, never Step 1)
 
-**ALWAYS start with one of:**
-- **Prospect's company name** — "{{companyName}}'s recent..."
-- **A specific market observation** — "Most [industry] companies we talk to are..."
-- **A specific finding** — "Your [blog post / LinkedIn post / job listing] on..."
-- **A relevant trend** — "Since [relevant thing] happened in [industry]..."
+**Start with one of:**
+- **A verified company signal** — a cited hire, launch, filing, or published statement
+- **A sourced market observation** — relevant to the segment, not disguised as one-to-one research
+- **A specific finding** — linked to a recorded evidence object
+- **A relevant trend** — with enough context for the reader to judge it
 
 The first sentence earns the second. If it doesn't make the prospect think "hm, relevant," the email is dead.
 
@@ -39,13 +41,7 @@ If a step is longer than this, cut it. Ruthlessly.
 
 ## Stats and Social Proof
 
-**Correct framing (observation):**
-> "Most brands we audit are leaving 30-40% of their SEO traffic unconverted."
-
-**Incorrect framing (study/study-like):**
-> "According to our data, 73% of brands have this problem."
-
-Why: Observation sounds like earned experience. Study sounds like a marketing claim. Prospects believe the former.
+Use a number only when its source, scope, and permission are recorded. Calling a number an “observation” does not make an unsupported claim safe.
 
 **Never fabricate:**
 - Specific client names unless verified and approved
@@ -96,20 +92,12 @@ Use hard asks only in Step 4+ if you've gotten engagement signals. Even then, so
 
 ---
 
-## AI Engine References
-
-When listing AI tools in copy or messaging, always include the full set:
-**ChatGPT, Perplexity, Gemini, Claude**
-
-Do not omit any major AI platform. If listing "AI tools" or "AI search engines," include all four.
-
----
-
 ## Personalization Rules
 
-- `{{personalization}}` field: must be set per lead. Don't leave it generic.
-- Personalization should reference something *specific* to the company: a recent hire, a published piece, a product launch, a job listing signal, a funding round.
-- If you can't personalize at least 50% of the list, remove `{{personalization}}` from the template and rewrite to not depend on it.
+- `{{personalization}}` must map to an evidence object with `observation`, `source`, and `verified: true`.
+- Job title and company name are targeting context, not personalization evidence.
+- Never infer intent from a hire, funding event, tool install, or content view; state only what the source supports.
+- If a lead lacks verified evidence, leave the field empty and use segment-level relevance or remove the variable.
 
 ---
 
@@ -124,7 +112,7 @@ Do not omit any major AI platform. If listing "AI tools" or "AI search engines,"
   - Observation: "{{companyName}}'s content strategy"
   - Specificity: "Saw your post on [topic]"
   - Intrigue: "One thing we noticed"
-- A/B test 2 variants per Step 1. Pick winner after 100+ sends each.
+- Test one major variable at a time. Choose the winner using the preregistered primary outcome after the minimum sample, not open rate alone.
 
 ---
 
@@ -140,27 +128,6 @@ If it sounds like a marketing email, rewrite it. Cold email that converts sounds
 
 ---
 
-## 2026 Benchmark Data (Instantly)
+## Diagnosis order
 
-| Metric | Average | Elite Top 10% |
-|--------|---------|---------------|
-| Reply rate | 3.43% | 10.7%+ |
-| Top quartile | — | 5.5%+ |
-| Optimal length | — | Under 80 words |
-| Optimal sequence | — | 4-7 touchpoints |
-| Step 1 reply share | 58% | — |
-| Follow-up reply share | 42% | — |
-
-Step 1 captures 58% of all replies — invest most iteration budget there.
-Follow-ups still capture 42% — never skip them.
-
----
-
-## Campaign Diagnostic (30/30/50 Rule)
-
-When reply rate is low, diagnose before rewriting:
-- **30% targeting** — is the ICP right? Are you reaching decision-makers?
-- **30% offer** — is the offer compelling? Would YOU respond to this?
-- **50% deliverability** — are emails landing in inbox? Warmup score? SPF/DKIM?
-
-Don't rewrite copy if the problem is targeting or infrastructure.
+When the primary outcome misses its threshold, inspect delivery and bounce guardrails first, then audience quality, evidence coverage, offer, sequence, and CTA. Change one major assumption in the next wave so the result remains interpretable.

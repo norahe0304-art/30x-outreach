@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://30x.example/schemas/approval-manifest.schema.json",
+  "title": "30x Outreach Approval Manifest",
+  "type": "object",
+  "required": ["schema_version", "campaign_id", "approved_by", "approved_at", "content_sha256", "recipient_count"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "campaign_id": {"type": "string"},
+    "approved_by": {"type": "string", "minLength": 1},
+    "approved_at": {"type": "string", "format": "date-time"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "recipient_count": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,44 @@
+# [INPUT]: 依赖可复现 bug 所需版本、命令、预期、实际结果与脱敏日志
+# [OUTPUT]: 对外提供结构化 bug report form
+# [POS]: ISSUE_TEMPLATE 的缺陷入口；安全问题必须转私密渠道
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+name: Bug report
+description: Report a reproducible defect without credentials or contact data
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Security or PII issue? Stop and use private vulnerability reporting.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Minimal commands and fictional inputs only.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and redacted output
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: I removed credentials, PII, and live campaign data.
+          required: true

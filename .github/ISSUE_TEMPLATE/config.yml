@@ -1,0 +1,9 @@
+# [INPUT]: 依赖公开 issue 与私密 security report 的路由边界
+# [OUTPUT]: 对外提供 issue chooser 配置和安全报告链接
+# [POS]: ISSUE_TEMPLATE 的入口控制；避免漏洞细节进入公开 issue
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/norahe0304-art/30x-outreach/security/advisories/new
+    about: Privately report approval bypass, PII, credential, or external-write risks.

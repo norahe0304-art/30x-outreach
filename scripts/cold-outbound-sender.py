@@ -1,260 +1,268 @@
 #!/usr/bin/env python3
 """
-Cold Outbound Sender — 审核通过后发送邮件
+Human-gated outbound sender with immutable approvals and privacy-safe history.
 
-[INPUT]: 依赖 config_loader.py 的 load_config/get_sending_config/write_output
-[OUTPUT]: 对外提供邮件发送 + 历史记录
-[POS]: scripts/ 的发送脚本，被 SKILL.md Step 8 调用（需人工审批后才运行）
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
-
-Usage:
-    python3 cold-outbound-sender.py [--dry-run] [--max N]
-    python3 cold-outbound-sender.py --approved-file path/to/approved.json
-
-SMTP config: config.json > environment variables
+[INPUT]: 依赖 approved payload、thirtyx.approval manifest、环境变量发送凭据与 config_loader.py
+[OUTPUT]: 对外提供默认 preview、显式 --execute 发送、限额与去重日志
+[POS]: scripts/ 的最终外部写边界；不验证内容哈希绝不发送
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 """
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import smtplib
-import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from pathlib import Path
 
-try:
-    from config_loader import load_config, get_sending_config, write_output
-except ImportError:
-    def load_config(): return {}
-    def get_sending_config(c): return {}
-    def write_output(m, d, **kw): pass
+from thirtyx.approval import load_json, verify_manifest
+from config_loader import get_sending_config, load_config, write_output
 
 
 DEFAULT_MAX_PER_DAY = 10
 DEFAULT_APPROVED_FILE = "./data/cold-outbound-approved.json"
 DEFAULT_HISTORY_FILE = "./data/cold-outbound-history.json"
+SUSPICIOUS_PATTERNS = (
+    r"sk-[a-zA-Z0-9]{20,}",
+    r"Bearer [a-zA-Z0-9\-_.]+",
+    r"/Users/[a-zA-Z]+/",
+    r"password\s*[:=]\s*\S+",
+)
+
+
+def mask_email(email):
+    local, separator, domain = email.partition("@")
+    if not separator:
+        return "***"
+    visible = local[:1] if local else ""
+    return f"{visible}***@{domain}"
+
+
+def recipient_hash(email):
+    normalized = email.strip().lower().encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()
 
 
 def validate_outbound(text):
-    """Basic validation for outbound content. Returns (ok, text)."""
     if not text or not isinstance(text, str):
-        return False, text
-    # Check for common leaked credential patterns
-    suspicious_patterns = [
-        r'sk-[a-zA-Z0-9]{20,}',       # API keys
-        r'Bearer [a-zA-Z0-9\-_.]+',    # Auth headers
-        r'/Users/[a-zA-Z]+/',          # Local paths
-        r'password\s*[:=]\s*\S+',      # Password patterns
-    ]
-    import re
-    for pattern in suspicious_patterns:
-        if re.search(pattern, text, re.IGNORECASE):
-            return False, text
-    return True, text
+        return False
+    return not any(re.search(pattern, text, re.IGNORECASE) for pattern in SUSPICIOUS_PATTERNS)
+
+
+def prospects_from_payload(payload):
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict) and isinstance(payload.get("prospects"), list):
+        return payload["prospects"]
+    raise ValueError("approved payload must be a list or contain a prospects list")
+
+
+def draft_from_prospect(prospect):
+    angle = prospect.get("approved_angle", "A")
+    draft = prospect.get("angle_drafts", {}).get(angle, {})
+    return angle, draft.get("subject", ""), draft.get("body", "")
 
 
 def load_history(history_path):
-    if os.path.exists(history_path):
-        try:
-            with open(history_path) as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return []
+    path = Path(history_path)
+    if not path.exists():
+        return []
+    try:
+        with path.open(encoding="utf-8") as handle:
+            history = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return []
+    return history if isinstance(history, list) else []
 
 
 def save_history(history, history_path):
-    os.makedirs(os.path.dirname(history_path), exist_ok=True)
-    with open(history_path, 'w') as f:
-        json.dump(history, f, indent=2)
+    path = Path(history_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(history, handle, indent=2)
+        handle.write("\n")
 
 
 def count_sent_today(history):
-    today = datetime.now().strftime("%Y-%m-%d")
-    return sum(1 for h in history if h.get("sent_date", "").startswith(today))
+    today = datetime.now(timezone.utc).date().isoformat()
+    return sum(1 for item in history if (item.get("sent_at") or item.get("created_at", "")).startswith(today))
 
 
-def send_email_smtp(to, subject, body, sender_email, sender_name,
-                    smtp_host, smtp_port, smtp_user, smtp_password, dry_run=False):
-    """Send via SMTP."""
-    ok_subj, subject = validate_outbound(subject)
-    ok_body, body = validate_outbound(body)
-    if not ok_subj or not ok_body:
-        print(f"  🛡️  Email to {to} BLOCKED by validation (suspicious content detected)")
-        return False
+def send_smtp(to, subject, body, settings):
+    message = MIMEText(body, "plain")
+    message["Subject"] = subject
+    message["From"] = f"{settings['sender_name']} <{settings['sender_email']}>"
+    message["To"] = to
+    with smtplib.SMTP(settings["host"], int(settings["port"])) as server:
+        server.starttls()
+        server.login(settings["user"], settings["password"])
+        server.sendmail(settings["sender_email"], [to], message.as_string())
 
-    if dry_run:
-        print(f"  [DRY RUN] Would send to {to}: {subject}")
-        return True
 
+def sending_settings(config):
+    smtp = get_sending_config(config).get("smtp", {})
+    sender_email = os.environ.get("SENDER_EMAIL", "")
+    return {
+        "sender_email": sender_email,
+        "sender_name": os.environ.get("SENDER_NAME", ""),
+        "host": os.environ.get("SMTP_HOST", smtp.get("host", "smtp.gmail.com")),
+        "port": os.environ.get("SMTP_PORT", smtp.get("port", 587)),
+        "user": os.environ.get("SMTP_USER", sender_email),
+        "password": os.environ.get("SMTP_PASSWORD", ""),
+    }
+
+
+def require_live_authorization(payload, manifest_path):
+    if not manifest_path:
+        return False, ["--approval-manifest is required with --execute"]
     try:
-        msg = MIMEText(body, 'plain')
-        msg['Subject'] = subject
-        msg['From'] = f"{sender_name} <{sender_email}>"
-        msg['To'] = to
+        manifest = load_json(manifest_path)
+    except (OSError, json.JSONDecodeError) as error:
+        return False, [f"approval manifest is unreadable: {error}"]
+    return verify_manifest(payload, manifest)
 
-        with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_password)
-            server.sendmail(sender_email, [to], msg.as_string())
 
-        print(f"  ✅ Sent to {to}: {subject}")
+def build_parser():
+    parser = argparse.ArgumentParser(description="Preview approved outreach; execute only with a matching approval manifest")
+    parser.add_argument("--execute", action="store_true", help="Perform external sends; preview is the default")
+    parser.add_argument("--approval-manifest", help="Manifest created by 30x approve")
+    parser.add_argument("--max", type=int, default=DEFAULT_MAX_PER_DAY)
+    parser.add_argument("--approved-file", default=DEFAULT_APPROVED_FILE)
+    parser.add_argument("--history-file", default=DEFAULT_HISTORY_FILE)
+    return parser
+
+
+def load_approved_payload(path):
+    approved_path = Path(path)
+    if not approved_path.exists():
+        raise ValueError(f"approved payload not found: {approved_path}")
+    payload = load_json(approved_path)
+    return payload, prospects_from_payload(payload)
+
+
+def enforce_authorization(args, payload):
+    if not args.execute:
+        return
+    valid, errors = require_live_authorization(payload, args.approval_manifest)
+    if not valid:
+        raise ValueError("; ".join(errors))
+
+
+def enforce_credentials(execute, settings):
+    if execute and not settings["sender_email"]:
+        raise ValueError("SENDER_EMAIL is required with --execute")
+    if execute and not settings["password"]:
+        raise ValueError("SMTP_PASSWORD is required for live SMTP")
+
+
+def candidate_message(prospect, known_recipients):
+    email = str(prospect.get("email", "")).strip().lower()
+    if "@" not in email:
+        return None
+    fingerprint = recipient_hash(email)
+    if fingerprint in known_recipients:
+        print(f"  SKIP {mask_email(email)}: already sent")
+        return None
+    angle, subject, body = draft_from_prospect(prospect)
+    if not validate_outbound(subject) or not validate_outbound(body):
+        print(f"  BLOCK {mask_email(email)}: missing or suspicious content")
+        return None
+    return {"email": email, "fingerprint": fingerprint, "angle": angle, "subject": subject, "body": body}
+
+
+def deliver_message(message, execute, settings):
+    if not execute:
+        print(f"  PREVIEW {mask_email(message['email'])}: {message['subject']}")
         return True
-    except Exception as e:
-        print(f"  ❌ Error sending to {to}: {e}", file=sys.stderr)
-        return False
-
-
-def send_email_cli(to, subject, body, sender_email, sender_name, cli_command, dry_run=False):
-    """Send via a CLI tool (e.g., gog, msmtp, mailx)."""
-    ok_subj, subject = validate_outbound(subject)
-    ok_body, body = validate_outbound(body)
-    if not ok_subj or not ok_body:
-        print(f"  🛡️  Email to {to} BLOCKED by validation (suspicious content detected)")
-        return False
-
-    if dry_run:
-        print(f"  [DRY RUN] Would send to {to}: {subject}")
-        return True
-
     try:
-        # Default CLI pattern: gog gmail send
-        cmd = cli_command.split() + [
-            "--to", to,
-            "--subject", subject,
-            "--body", body,
-            "--from", f"{sender_name} <{sender_email}>",
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        if result.returncode == 0:
-            print(f"  ✅ Sent to {to}: {subject}")
-            return True
-        else:
-            print(f"  ❌ Failed to send to {to}: {result.stderr}", file=sys.stderr)
-            return False
-    except Exception as e:
-        print(f"  ❌ Error sending to {to}: {e}", file=sys.stderr)
+        send_smtp(message["email"], message["subject"], message["body"], settings)
+    except (OSError, smtplib.SMTPException) as error:
+        print(f"  ERROR {mask_email(message['email'])}: {type(error).__name__}", file=sys.stderr)
         return False
+    print(f"  SENT {mask_email(message['email'])}: {message['subject']}")
+    return True
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Cold Outbound Sender")
-    parser.add_argument("--dry-run", action="store_true", help="Don't actually send emails")
-    parser.add_argument("--max", type=int, default=DEFAULT_MAX_PER_DAY,
-                        help=f"Max emails per day (default: {DEFAULT_MAX_PER_DAY})")
-    parser.add_argument("--approved-file", default=DEFAULT_APPROVED_FILE,
-                        help="Path to approved prospects JSON file")
-    parser.add_argument("--history-file", default=DEFAULT_HISTORY_FILE,
-                        help="Path to send history JSON file")
-    parser.add_argument("--send-method", choices=["smtp", "cli"], default="smtp",
-                        help="Send method: smtp or cli (default: smtp)")
-    parser.add_argument("--cli-command", default="gog gmail send",
-                        help="CLI command for sending (used with --send-method cli)")
-    args = parser.parse_args()
+def history_entry(message):
+    content = f"{message['subject']}\n{message['body']}".encode("utf-8")
+    return {
+        "recipient_sha256": message["fingerprint"],
+        "angle": message["angle"],
+        "content_sha256": hashlib.sha256(content).hexdigest(),
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "sent_at": None,
+    }
 
-    # ── 加载配置 (config.json > env) ──
-    config = load_config()
-    smtp_cfg = get_sending_config(config).get("smtp", {})
 
-    sender_email = smtp_cfg.get("sender_email") or os.environ.get("SENDER_EMAIL", "")
-    sender_name = smtp_cfg.get("sender_name") or os.environ.get("SENDER_NAME", "")
-    smtp_host = smtp_cfg.get("host") or os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = smtp_cfg.get("port") or os.environ.get("SMTP_PORT", "587")
-    smtp_user = smtp_cfg.get("user") or os.environ.get("SMTP_USER", sender_email)
-    smtp_password = smtp_cfg.get("password") or os.environ.get("SMTP_PASSWORD", "")
+def deliver_with_journal(message, settings, history, history_path):
+    entry = history_entry(message)
+    history.append(entry)
+    save_history(history, history_path)
+    if not deliver_message(message, True, settings):
+        history.remove(entry)
+        save_history(history, history_path)
+        return False
+    entry.update({"status": "sent", "sent_at": datetime.now(timezone.utc).isoformat()})
+    save_history(history, history_path)
+    return True
 
-    if not os.path.exists(args.approved_file):
-        print(f"No approved prospects file found at {args.approved_file}")
-        sys.exit(0)
 
-    with open(args.approved_file) as f:
-        approved = json.load(f)
-
-    history = load_history(args.history_file)
-    sent_today = count_sent_today(history)
-    remaining = args.max - sent_today
-
-    if remaining <= 0:
-        print(f"Already sent {sent_today} emails today (max {args.max}). Stopping.")
-        sys.exit(0)
-
-    sent_count = 0
-    for prospect in approved:
-        if sent_count >= remaining:
+def process_batch(prospects, execute, settings, history, limit, history_path=None):
+    completed = 0
+    known_recipients = {item.get("recipient_sha256") for item in history}
+    for prospect in prospects:
+        if completed >= limit:
             break
-
-        email = prospect.get("email")
-        if not email or email == "Unknown":
+        message = candidate_message(prospect, known_recipients)
+        if not message:
             continue
-
-        # Check if already sent
-        if any(h.get("email") == email for h in history):
-            print(f"  SKIP {email}: already in history")
+        delivered = deliver_with_journal(message, settings, history, history_path) if execute else deliver_message(message, False, settings)
+        if not delivered:
             continue
+        known_recipients.add(message["fingerprint"])
+        completed += 1
+    return completed
 
-        angle_key = prospect.get("approved_angle", "A")
-        drafts = prospect.get("angle_drafts", {})
-        draft = drafts.get(angle_key, {})
 
-        subject = draft.get("subject", f"Quick question for {prospect.get('company', 'you')}")
-        body = draft.get("body", "")
-
-        if not body:
-            print(f"  SKIP {email}: no draft body for angle {angle_key}")
-            continue
-
-        if args.send_method == "smtp":
-            if not smtp_password and not args.dry_run:
-                print("ERROR: SMTP_PASSWORD env var required for smtp sending.")
-                sys.exit(1)
-            success = send_email_smtp(
-                email, subject, body, sender_email, sender_name,
-                smtp_host, smtp_port, smtp_user, smtp_password, args.dry_run
-            )
-        else:
-            success = send_email_cli(
-                email, subject, body, sender_email, sender_name,
-                args.cli_command, args.dry_run
-            )
-
-        if success:
-            history.append({
-                "company": prospect.get("company", ""),
-                "contact_name": prospect.get("contact_name", ""),
-                "email": email,
-                "angle": angle_key,
-                "subject": subject,
-                "sent_date": datetime.now().isoformat(),
-                "score": prospect.get("score", 0),
-            })
-            sent_count += 1
-
-    if not args.dry_run:
-        save_history(history, args.history_file)
-
-    # Remove sent prospects from approved file
-    if not args.dry_run and sent_count > 0:
-        sent_emails = {h["email"] for h in history}
-        remaining_approved = [p for p in approved if p.get("email") not in sent_emails]
-        with open(args.approved_file, 'w') as f:
-            json.dump(remaining_approved, f, indent=2)
-
-    print(f"\nSent {sent_count} emails ({'dry run' if args.dry_run else 'live'}). Total today: {sent_today + sent_count}")
-
-    # ── 统一格式输出 (30x) ──
+def report_run(args, completed, sent_today):
+    mode = "executed" if args.execute else "previewed"
+    live_total = sent_today + (completed if args.execute else 0)
+    print(f"\n{mode.capitalize()} {completed} messages. Daily live total: {live_total}")
     write_output(
         module="cold-outbound-sender",
-        summary=f"Sent {sent_count} emails ({'dry run' if args.dry_run else 'live'})",
-        data={
-            "sent": sent_count,
-            "total_today": sent_today + sent_count,
-            "dry_run": args.dry_run,
-            "max_per_day": args.max,
-        },
+        summary=f"{mode.capitalize()} {completed} messages",
+        data={"mode": mode, "messages": completed, "daily_live_total": live_total, "max_per_day": args.max},
     )
 
 
+def run(args):
+    payload, prospects = load_approved_payload(args.approved_file)
+    enforce_authorization(args, payload)
+    history = load_history(args.history_file)
+    sent_today = count_sent_today(history)
+    remaining = max(args.max - sent_today, 0)
+    if not remaining:
+        print(f"Daily limit reached: {sent_today}/{args.max}")
+        return 0
+    settings = sending_settings(load_config())
+    enforce_credentials(args.execute, settings)
+    completed = process_batch(prospects, args.execute, settings, history, remaining, args.history_file)
+    report_run(args, completed, sent_today)
+    return 0
+
+
+def main():
+    try:
+        return run(build_parser().parse_args())
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
